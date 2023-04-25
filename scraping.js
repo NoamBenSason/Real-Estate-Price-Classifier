@@ -42,13 +42,13 @@ const divWithClass = findDivWithClass(className); // Call the function to find t
 overview = divWithClass.children[0].children[0].children[0].children[1].children[0].children[0].children[2].children[0].children[0].children[1].children[1].children[0].children[0].innerText
 
 const divElement = document.getElementsByClassName('media-column-container')[0];
-
+const imageUrls = [];
 if (divElement) {
   // Get all the img elements within the div
   const imgElements = divElement.querySelectorAll('img');
 
   // Extract URLs of the first 5 images
-  const imageUrls = [];
+  
   for (let i = 0; i < imgElements.length && i < 5; i++) {
     const imgUrl = imgElements[i].getAttribute('src');
     imageUrls.push(imgUrl);
@@ -68,4 +68,3 @@ const blob = new Blob([JSON.stringify(json)], { type: "text/plain" }); // Replac
 
 // Save the file using FileSaver.js
 saveAs(blob, address.replace(' ','_') + 'json');
-
