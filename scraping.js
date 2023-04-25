@@ -71,12 +71,16 @@ json.address = address;
 json.overview = overview;
 json.images = imageUrls;
 
-const blob = new Blob([JSON.stringify(json)], { type: "text/plain" }); // Replace with appropriate MIME type
+const blob = new Blob([JSON.stringify(json)], { type: "text/plain" }); // Replace with 
 
-
-function replaceAll(str, find, replace) {
-  return str.replace(new RegExp(find, 'g'), replace);
+function extractNumberBeforeZpid(url) {
+  var regex = /\/(\d+)_zpid\//; // Regular expression to match the number before "zpid"
+  var match = url.match(regex); // Match the regular expression against the URL
+  var numberBeforeZpid = match ? match[1] : null; // Extract the matched number
+  return numberBeforeZpid;
 }
 
-// Save the file using FileSaver.js
-saveAs(blob, replaceAll(replaceAll(address,',',''),' +','_'));
+// Example usage:
+var url = window.location.href;
+var numberBeforeZpid = extractNumberBeforeZpid(url);
+saveAs(blob, numberBeforeZpid);
