@@ -66,5 +66,10 @@ json.images = imageUrls;
 
 const blob = new Blob([JSON.stringify(json)], { type: "text/plain" }); // Replace with appropriate MIME type
 
+
+function replaceAll(str, find, replace) {
+  return str.replace(new RegExp(find, 'g'), replace);
+}
+
 // Save the file using FileSaver.js
-saveAs(blob, address.replace(' ','_') + 'json');
+saveAs(blob, replaceAll(replaceAll(address,',',''),' +','_'));
