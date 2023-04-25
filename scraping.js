@@ -57,9 +57,9 @@ if (divElement) {
 
 var json = {};
 json.price = price;
-json.bed = bed;
-json.bath = bath;
-json.sqft = sqft;
+json.bed = bed.replace(' bd','');
+json.bath = bath.replace(' ba','');
+json.sqft = sqft.replace(' sqft','');
 json.address = address;
 json.overview = overview;
 json.images = imageUrls;
