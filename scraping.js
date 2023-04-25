@@ -39,7 +39,14 @@ function findDivWithClass(className) {
 
 const className = 'data-view-container'; // Specify the class name to search for
 const divWithClass = findDivWithClass(className); // Call the function to find the div element
-overview = divWithClass.children[0].children[0].children[0].children[1].children[0].children[0].children[2].children[0].children[0].children[1].children[1].children[0].children[0].innerText
+child = divWithClass.children[0].children[0].children[0].children[1].children[0].children[0].children[2].children[0].children[0].children[1]
+if (child.children[1].className == 'ds-overview-ny-agent-card'){
+    child = child.children[2];
+}
+else{
+    child = child.children[1];
+}
+overview = child.children[0].children[0].innerText
 
 const divElement = document.getElementsByClassName('media-column-container')[0];
 const imageUrls = [];
