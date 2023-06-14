@@ -17,11 +17,35 @@ function findDivWithClass(className) {
 function extractNumberBeforeZpid(url) {
   var regex = /\/(\d+)_zpid\//; // Regular expression to match the number before "zpid"
   var match = url.match(regex); // Match the regular expression against the URL
-  var numberBeforeZpid = match ? match[1] : null; // Extract the matched number
-  return numberBeforeZpid;
+   // Extract the matched number
+  return match ? match[1] : null;
 }
 
 
+function get_overview() {
+
+  const div = document.getElementById("Overview")
+  if (div){
+    var element = document.getElementById('Overview');
+    var parentElement = element.parentNode;
+    var index = Array.prototype.indexOf.call(parentElement.children, element);
+    return parentElement.children[index+1].children[0].children[0].children[1].children[1].children[0].children[0].innerText
+  }
+
+  else{
+    const className = 'data-view-container'; // Specify the class name to search for
+    const divWithClass = findDivWithClass(className); // Call the function to find the div element
+    child = divWithClass.children[0].children[0].children[0].children[1].children[0].children[0].children[2].children[0].children[0].children[1]
+    if (child.children[1].className === 'ds-overview-ny-agent-card') {
+      child = child.children[2];
+    } else {
+      child = child.children[1];
+    }
+    return child.children[0].children[0].innerText
+  }
+
+}
+var counter = 0
 function extractData(){
   var summaryContainer = document.querySelector('.summary-container');
 
@@ -47,20 +71,7 @@ function extractData(){
   // Extract address
   var addressElement = summaryContainer.querySelector('.hdp__sc-riwk6j-0 h1');
   var address = addressElement ? addressElement.textContent.trim() : '';
-
-
-
-
-  const className = 'data-view-container'; // Specify the class name to search for
-  const divWithClass = findDivWithClass(className); // Call the function to find the div element
-  child = divWithClass.children[0].children[0].children[0].children[1].children[0].children[0].children[2].children[0].children[0].children[1]
-  if (child.children[1].className == 'ds-overview-ny-agent-card'){
-      child = child.children[2];
-  }
-  else{
-      child = child.children[1];
-  }
-  overview = child.children[0].children[0].innerText
+  const overview = get_overview();
 
   const divElement = document.getElementsByClassName('media-column-container')[0];
   const imageUrls = [];
@@ -90,6 +101,8 @@ function extractData(){
   json.zpid = numberBeforeZpid;
   const blob = new Blob([JSON.stringify(json)], { type: "text/plain" });
   saveAs(blob, numberBeforeZpid);
+  counter-=1;
+  return counter;
 }
 
 loadSaveScript()
