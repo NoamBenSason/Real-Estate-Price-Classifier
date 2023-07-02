@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 import pandas as pd
 import glob
@@ -75,7 +77,6 @@ def split_train_test_by_city(df, random_state: int = 42, train_size: float = 0.8
     all_train = pd.concat(train_sets)
     all_test = pd.concat(test_sets)
     return all_train, all_test
-    a = 1
 
 
 def reorder_columns(df):
@@ -96,7 +97,6 @@ def reorder_columns(df):
 def build_df_from_data(train_path: str = "train_data.csv",
                        test_path: str = "test_data.csv",
                        base_data_dir: str = "data"):
-
     df = build_raw_df(base_data_dir)
     df = parse_numeric_cols(df)
     df = parse_address(df)
@@ -107,7 +107,49 @@ def build_df_from_data(train_path: str = "train_data.csv",
 
     df_train.to_csv(train_path, index=False)
     df_test.to_csv(test_path, index=False)
+    return df_train, df_test
+
+
+def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
+                     nan_value: str = "NaN"):
+    """
+    Accepts both path to dataframe of a dataframe.
+    :param df_or_df_path: The dataframe or the path to it
+    :param format_str: The format string of the data. To enter a variable in the format, enter it with
+                       curly braces - {}
+                       For example, to inject the overview into the string, write {overview} in the relevant
+                       place in the string.
+                       Available labels:
+                       - zpid
+                       - bed
+                       - bath
+                       - sqft
+                       - street
+                       - city
+                       - state
+                       - overview
+                       - price
+    :param nan_value: The value to assign to NaN elements
+    :return: A list of tuples of length 2. The first element is the formatted string, the second element is
+             the price of the sample, in million dollars.
+    """
+    if isinstance(df_or_df_path, str):
+        df_or_df_path = pd.read_csv(df_or_df_path)
+    df = df_or_df_path
+    out = []
+    for _, row in tqdm(list(df.iterrows()),
+                       desc="Formatting data"):
+        elements_map = dict(row)
+        for col in ['bed', 'bath', 'sqft']:
+            elements_map[col] = int(elements_map[col]) if not np.isnan(elements_map[col]) else nan_value
+        current_str = format_str.format(**elements_map)
+        out.append((current_str, row['price']))
+    return out
 
 
 if __name__ == '__main__':
-    fire.Fire(build_df_from_data)
+    train, test = build_df_from_data()
+    str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
+    x = format_dataframe(train, str_format)
+    a = 1
+    # fire.Fire(build_df_from_data)
