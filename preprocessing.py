@@ -148,8 +148,7 @@ def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
 
 
 if __name__ == '__main__':
-    train, test = build_df_from_data()
-    str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
-    x = format_dataframe(train, str_format)
-    a = 1
-    # fire.Fire(build_df_from_data)
+    # train, test = build_df_from_data()
+    # str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
+    # x = format_dataframe(train, str_format)
+    fire.Fire(build_df_from_data)
