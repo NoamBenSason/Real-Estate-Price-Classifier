@@ -4,6 +4,7 @@ import glob
 import json
 from tqdm import tqdm
 import fire
+from sklearn.model_selection import train_test_split
 
 
 def txt_file_to_series(txt_file_path):
@@ -58,6 +59,25 @@ def parse_address(df):
     return new_df
 
 
+def split_train_test_by_city(df, random_state: int = 42, train_size: float = 0.85):
+    train_sets = []
+    test_sets = []
+    for city in df['city'].unique():
+        samples_in_city = df[df['city'] == city]
+        if len(samples_in_city) == 1:
+            train_sets.append(samples_in_city)
+            continue
+        train_city, test_city = train_test_split(samples_in_city,
+                                                 train_size=train_size,
+                                                 random_state=random_state)
+        train_sets.append(train_city)
+        test_sets.append(test_city)
+    all_train = pd.concat(train_sets)
+    all_test = pd.concat(test_sets)
+    return all_train, all_test
+    a = 1
+
+
 def reorder_columns(df):
     order = [
         'zpid',
@@ -73,12 +93,20 @@ def reorder_columns(df):
     return df[order]
 
 
-def build_df_from_data(save_path: str = "california_data.csv", base_data_dir: str = "data"):
+def build_df_from_data(train_path: str = "train_data.csv",
+                       test_path: str = "test_data.csv",
+                       base_data_dir: str = "data"):
+
     df = build_raw_df(base_data_dir)
     df = parse_numeric_cols(df)
     df = parse_address(df)
-    df = reorder_columns(df)
-    df.to_csv(save_path, index=False)
+    df_train, df_test = split_train_test_by_city(df)
+
+    df_train = reorder_columns(df_train)
+    df_test = reorder_columns(df_test)
+
+    df_train.to_csv(train_path, index=False)
+    df_test.to_csv(test_path, index=False)
 
 
 if __name__ == '__main__':
