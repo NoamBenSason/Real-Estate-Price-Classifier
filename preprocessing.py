@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import glob
 import json
-import os
 from tqdm import tqdm
 import fire
 
@@ -32,7 +31,8 @@ def parse_numeric_cols(df):
     return df
 
 
-def build_df_from_data(save_path: str = "train_data.csv", base_data_dir: str = "data"):
+def build_df_from_data(save_path: str = "california_data.csv", base_data_dir:
+str = "data"):
     df = build_raw_df(base_data_dir)
     df = parse_numeric_cols(df)
     df.to_csv(save_path, index=False)
