@@ -17,23 +17,40 @@
 import seaborn as sns
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 # %%
 df = pd.read_csv("california_data.csv")
 
 # %%
-df.dtypes
+df = df.dropna()
+df['bed'] = df['bed'].astype(int)
+df['bath'] =df['bath'].astype(int)
 
 # %%
 sns.histplot(df["price"])
+plt.title("price histogram")
 
 # %%
 sns.countplot(data=df,x="bed")
+plt.title("bed histogram of data")
 
 # %%
-df.loc[df["bed"] == 12]
+sns.countplot(data=df,x="bath")
+plt.title("bath histogram of data")
 
 # %%
-df
+bed_bath_groups = df[["bed","bath","price"]].groupby(['bed','bath']).mean()
 
 # %%
+scatter = plt.scatter(bed_bath_groups.index.get_level_values('bed'),
+                      bed_bath_groups.index.get_level_values('bath'),
+                      c=bed_bath_groups['price'], cmap='viridis')
+
+# Add colorbar
+plt.colorbar(scatter, label='Average Price(in millions of dollars)')
+_ = plt.xticks(range(int(df['bed'].min()), int(df['bed'].max()) + 1))
+_ = plt.yticks(range(int(df['bath'].min()), int(df['bath'].max()) + 1))
+_ = plt.title("avg price of (bed,bath) combinations")
+plt.xlabel("beds")
+plt.ylabel("baths")
