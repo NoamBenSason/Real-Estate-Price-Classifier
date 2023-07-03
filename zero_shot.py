@@ -3,15 +3,15 @@ import torch
 from sklearn.metrics import mean_squared_error
 from preprocessing import build_df_from_data, format_dataframe
 
-SLICE_DATA_FOR_DEBUG = 10
+SLICE_DATA_FOR_DEBUG = 20
 X_INDX_IN_TUPLE = 0
 Y_INDX_IN_TUPLE = 1
 
 MODELS = [
     # model name, model object, mask format
     ("bert-base-uncased", BertForMaskedLM, "[MASK]"),
-    # ("roberta-base", RobertaForMaskedLM, "<mask>"),
-    # ("google/electra-base-generator",ElectraForMaskedLM,"[MASK]")
+    ("roberta-base", RobertaForMaskedLM, "<mask>"),
+    ("google/electra-base-generator",ElectraForMaskedLM,"[MASK]")
 ]
 
 
@@ -45,9 +45,15 @@ def zero_shot(tokenizer, model, masked_data_sentences, true_data_completion):
         # logits.shape: [number of sentances, tokens (maximum in all sentances), probs]
         logits = model(**inputs).logits
 
+    max_val = torch.max(logits)
     mask_token_indexs = (inputs.input_ids == tokenizer.mask_token_id).nonzero(as_tuple=True)
+    numerical_ids = tokenizer.encode("0 1 2 3 4 5 6 7 8 9", add_special_tokens=False)
+    # maximazing only the numerical token to only them will get picked
+    for indx in numerical_ids:
+        logits[mask_token_indexs[0], mask_token_indexs[1], indx] = logits[mask_token_indexs[0],
+        mask_token_indexs[1], indx] + max_val
 
-    predicted_token_id = logits[0, mask_token_indexs[1]].argmax(axis=-1)
+    predicted_token_id = logits[mask_token_indexs[0], mask_token_indexs[1]].argmax(axis=-1)
     predicted_words = tokenizer.batch_decode(predicted_token_id)
 
     print(predicted_words)
@@ -60,7 +66,8 @@ if __name__ == '__main__':
     # df_train, df_test = build_df_from_data()
 
     for model_name, model_for_lm, mask_format in MODELS:
-        format_str = "{overview}" + f" The price of this house is {mask_format}.{mask_format}$ million."
+        format_str = f"The price of this house is {mask_format}.{mask_format}$ million." + "{overview}"
+        # format_str = f"This house costs {mask_format}.{mask_format}$ million." + "{overview}"
         train_data = format_dataframe("train_data.csv", format_str)[:SLICE_DATA_FOR_DEBUG]
 
         tokenizer = AutoTokenizer.from_pretrained(model_name)
