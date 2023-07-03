@@ -113,7 +113,7 @@ def build_df_from_data(train_path: str = "train_data.csv",
 def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
                      nan_value: str = "NaN"):
     """
-    Accepts both path to dataframe of a dataframe.
+    Accepts either a path to dataframe or a dataframe.
     :param df_or_df_path: The dataframe or the path to it
     :param format_str: The format string of the data. To enter a variable in the format, enter it with
                        curly braces - {}
