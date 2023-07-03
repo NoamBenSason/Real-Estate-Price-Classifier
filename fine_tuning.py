@@ -1,7 +1,22 @@
-from transformers import TrainingArguments, Trainer
 import evaluate
-import wandb
+import pandas as pd
+# import wandb
 
+from datasets import Dataset
+from preprocessing import format_dataframe
+from transformers import TrainingArguments, Trainer, AutoModelForSequenceClassification, AutoTokenizer
+
+MODELS = ['bert-base-uncased']
+SPECIAL_TOKENS = ['[bd]', '[br]', '[address]', '[overview]', '[sqft]']
+FINE_TUNNING_FORMAT = "[bd]{bed}[br]{bath}[sqft]{sqft}[overview]{overview}[SEP]"
+
+
+def tokenize_func(row, tokenizer, with_label=True):
+    tokenized_inputs = tokenizer(row["description"], truncation=True)
+    if with_label:
+        tokenized_inputs["label"] = row['label']
+
+    return tokenized_inputs
 
 def get_metrics_func():
     """
@@ -41,20 +56,66 @@ def train_model(model, tokenizer, train_dataset, validation_dataset,
     :return:
     """
     train_args = TrainingArguments(output_dir="./results",
-                                       save_strategy=save_strategy,
-                                       evaluation_strategy="steps",
-                                       report_to=["wandb"],
-                                       fp16=True,
-                                       learning_rate=wandb_config.lr,
-                                       adam_beta1=wandb_config.adam_beta1,
-                                       adam_beta2=wandb_config.adam_beta2
-                                       )
+                                   save_strategy=save_strategy,
+                                   evaluation_strategy="steps",
+                                       # report_to=["wandb"],
+                                       # fp16=True,
+                                       # learning_rate=wandb_config.lr,
+                                       # adam_beta1=wandb_config.adam_beta1,
+                                       # adam_beta2=wandb_config.adam_beta2
+                                   report_to="none")
 
-    trainer = Trainer(model=model, args=train_args,
-                          train_dataset=train_dataset,
-                          eval_dataset=validation_dataset,
-                          compute_metrics=get_metrics_func(),
-                          tokenizer=tokenizer, fp16=True)
+    trainer = Trainer(model=model,
+                      args=train_args,
+                      train_dataset=train_dataset,
+                      eval_dataset=validation_dataset,
+                      compute_metrics=get_metrics_func(),
+                      tokenizer=tokenizer,
+                      # fp16=True
+                      )
 
     trainer.train()
     return trainer, trainer.evaluate(eval_dataset=validation_dataset)
+
+
+def fine_tune_model(model_name, special_tokens, train_dataset, validation_dataset, save_strategy,
+                    wandb_config):
+    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=1)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    # Update tokenizer and size
+    tokenizer.add_tokens(special_tokens, special_tokens=True)
+    model.resize_token_embeddings(len(tokenizer))
+
+    # Encode data
+    encoded_train_dataset = train_dataset.map(lambda x: tokenize_func(x, tokenizer), batched=True)
+    encoded_validation_dataset = validation_dataset.map(lambda x: tokenize_func(x, tokenizer), batched=True)
+
+    trainer, eval_results = train_model(
+        model, tokenizer, encoded_train_dataset, encoded_validation_dataset, save_strategy, wandb_config
+    )
+
+    return trainer.predict(encoded_validation_dataset), eval_results
+
+
+def convert_data(data):
+    formatted_data = format_dataframe(data, FINE_TUNNING_FORMAT)
+    formatted_df = pd.DataFrame(formatted_data, columns=['description', 'label'])
+
+    return Dataset.from_pandas(formatted_df)
+
+
+def main():
+    train_dataset = convert_data('train_data.csv')
+    validation_dataset = convert_data('test_data.csv')
+
+    for model_name in MODELS:
+        predictions, eval_results = fine_tune_model(
+            model_name, SPECIAL_TOKENS, train_dataset, validation_dataset, "no", {}
+        )
+
+        print(eval_results)
+
+
+if __name__ == "__main__":
+    main()
