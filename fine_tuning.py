@@ -26,7 +26,7 @@ def get_metrics_func():
     :return: a function that calculates metrics
     """
     r2 = evaluate.load("r_squared")
-    rmse = evaluate.load("mse")
+    mse = evaluate.load("mse")
     mae = evaluate.load("mae")
 
     def compute_metrics(pred):
@@ -37,10 +37,10 @@ def get_metrics_func():
         """
         labels = pred.label_ids
         preds = pred.predictions
-        r2_score = r2.compute(references=labels, predictions=preds)
-        mse_score = rmse.compute(references=labels, predictions=preds)
-        mae_score = mae.compute(references=labels, predictions=preds)
-        return {"r2": r2_score, "mse": mse_score, "mae": mae_score}
+        metrics = {'r2': r2.compute(references=labels, predictions=preds)}
+        metrics.update(mse.compute(references=labels, predictions=preds))
+        metrics.update(mae.compute(references=labels, predictions=preds))
+        return metrics
 
     return compute_metrics
 
