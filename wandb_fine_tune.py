@@ -1,6 +1,6 @@
 import wandb
 from datetime import datetime
-from fine_tuning import fine_tune_model, SPECIAL_TOKENS,convert_data
+from fine_tuning import fine_tune_model, SPECIAL_TOKENS, convert_data
 
 
 def get_time():
@@ -29,6 +29,9 @@ def get_config():
         'weight_decay': {
             'values': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
         },
+        'beta': {
+            'values': [0.0, 0.2, 0.5, 1., 1.5]
+        }
     }
 
     sweep_config['parameters'] = param_dict

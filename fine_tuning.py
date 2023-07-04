@@ -6,10 +6,25 @@ from datasets import Dataset
 from preprocessing import format_dataframe
 from transformers import TrainingArguments, Trainer, \
     AutoModelForSequenceClassification, AutoTokenizer
+import torch
 
 MODELS = ['bert-base-uncased']
 SPECIAL_TOKENS = ['[bd]', '[br]', '[address]', '[overview]', '[sqft]']
 FINE_TUNNING_FORMAT = "[bd]{bed}[br]{bath}[sqft]{sqft}[overview]{overview}[SEP]"
+
+
+class SmoothL1Trainer(Trainer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.beta = kwargs.get("beta", 0.5)
+        self.criterion = torch.nn.SmoothL1Loss(beta=self.beta)
+
+    def compute_loss(self, model, inputs, return_outputs=False):
+        labels = inputs.get("labels")
+        outputs = model(**inputs)
+        logits = outputs.logits.squeeze(-1)
+        loss = self.criterion(logits, labels.float())
+        return (loss, outputs) if return_outputs else loss
 
 
 def tokenize_func(row, tokenizer, with_label=True):
@@ -60,22 +75,24 @@ def train_model(model, tokenizer, train_dataset, validation_dataset,
     """
     train_args = TrainingArguments(output_dir="./results",
                                    save_strategy=save_strategy,
-                                   evaluation_strategy="epoch",
+                                   evaluation_strategy="steps",
                                    report_to=["wandb"] if use_wandb else [
                                        'none'])
-
+    beta = config['beta'] if config is not None else 0.5
     if config is not None:
         train_args.learning_rate = config['learning_rate']
         train_args.num_train_epochs = config['epoch']
         train_args.weight_decay = config['weight_decay']
 
-    trainer = Trainer(model=model,
-                      args=train_args,
-                      train_dataset=train_dataset,
-                      eval_dataset=validation_dataset,
-                      compute_metrics=get_metrics_func(),
-                      tokenizer=tokenizer
-                      )
+
+    trainer = SmoothL1Trainer(model=model,
+                              args=train_args,
+                              train_dataset=train_dataset,
+                              eval_dataset=validation_dataset,
+                              compute_metrics=get_metrics_func(),
+                              tokenizer=tokenizer,
+                              beta = beta
+                              )
 
     trainer.train()
     return trainer, trainer.evaluate(eval_dataset=validation_dataset)
