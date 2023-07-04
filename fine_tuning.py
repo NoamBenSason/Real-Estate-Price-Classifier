@@ -15,8 +15,8 @@ FINE_TUNNING_FORMAT = "[bd]{bed}[br]{bath}[sqft]{sqft}[overview]{overview}[SEP]"
 
 class SmoothL1Trainer(Trainer):
     def __init__(self, *args, **kwargs):
+        beta = kwargs.pop("beta", 0.5)
         super().__init__(*args, **kwargs)
-        self.beta = kwargs.get("beta", 0.5)
         self.criterion = torch.nn.SmoothL1Loss(beta=self.beta)
 
     def compute_loss(self, model, inputs, return_outputs=False):
