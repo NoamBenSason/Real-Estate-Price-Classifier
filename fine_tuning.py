@@ -75,7 +75,9 @@ def train_model(model, tokenizer, train_dataset, validation_dataset,
     """
     train_args = TrainingArguments(output_dir="./results",
                                    save_strategy=save_strategy,
-                                   evaluation_strategy="steps",
+                                   evaluation_strategy="epoch",
+                                   logging_strategy="steps",
+                                   logging_steps=50,
                                    report_to=["wandb"] if use_wandb else [
                                        'none'])
     beta = config['beta'] if config is not None else 0.5
