@@ -17,7 +17,7 @@ class SmoothL1Trainer(Trainer):
     def __init__(self, *args, **kwargs):
         beta = kwargs.pop("beta", 0.5)
         super().__init__(*args, **kwargs)
-        self.criterion = torch.nn.SmoothL1Loss(beta=self.beta)
+        self.criterion = torch.nn.SmoothL1Loss(beta=beta)
 
     def compute_loss(self, model, inputs, return_outputs=False):
         labels = inputs.get("labels")
