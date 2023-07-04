@@ -95,7 +95,7 @@ def reorder_columns(df):
 
 
 def build_df_from_data(train_path: str = "train_data.csv",
-                       test_path: str = "test_data.csv",
+                       val_path: str = "validation_data.csv",
                        base_data_dir: str = "data"):
     df = build_raw_df(base_data_dir)
     df = parse_numeric_cols(df)
@@ -106,7 +106,7 @@ def build_df_from_data(train_path: str = "train_data.csv",
     df_test = reorder_columns(df_test)
 
     df_train.to_csv(train_path, index=False)
-    df_test.to_csv(test_path, index=False)
+    df_test.to_csv(val_path, index=False)
     return df_train, df_test
 
 
