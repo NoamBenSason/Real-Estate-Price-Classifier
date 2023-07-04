@@ -60,7 +60,7 @@ def train_model(model, tokenizer, train_dataset, validation_dataset,
     """
     train_args = TrainingArguments(output_dir="./results",
                                    save_strategy=save_strategy,
-                                   evaluation_strategy="steps",
+                                   evaluation_strategy="epoch",
                                    report_to=["wandb"] if use_wandb else [
                                        'none'])
 

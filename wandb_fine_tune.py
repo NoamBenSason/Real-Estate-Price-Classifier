@@ -1,6 +1,6 @@
 import wandb
 from datetime import datetime
-from fine_tuning import fine_tune_model, SPECIAL_TOKENS
+from fine_tuning import fine_tune_model, SPECIAL_TOKENS,convert_data
 
 
 def get_time():
@@ -38,8 +38,10 @@ def get_config():
 def wandb_run(config=None):
     with wandb.init(config=config, name=f"selling_bat_yam_{get_time()}"):
         config = wandb.config
-        fine_tune_model(config['model_name'], SPECIAL_TOKENS, "train_data.csv",
-                        "validation_data.csv", "no", config, True)
+        train = convert_data("train_data.csv")
+        val = convert_data("validation_data.csv")
+        fine_tune_model(config['model_name'], SPECIAL_TOKENS, train,
+                        val, "no", config, True)
 
 
 def main():
@@ -47,6 +49,14 @@ def main():
     sweep_id = wandb.sweep(sweep_config, project="anlp_project",
                            entity="selling_bat_yam")
     wandb.agent(sweep_id, wandb_run, count=1000)
+    # config = {
+    #     'model_name': 'bert-base-uncased',
+    #     'epoch': 1,
+    #     'learning_rate': 0.0001,
+    #     'weight_decay': 0.0
+    # }
+
+    # wandb_run(config)
 
 
 if __name__ == '__main__':
