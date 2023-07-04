@@ -107,7 +107,7 @@ def convert_data(data):
 
 def main():
     train_dataset = convert_data('train_data.csv')
-    validation_dataset = convert_data('test_data.csv')
+    validation_dataset = convert_data('validation_data.csv')
 
     for model_name in MODELS:
         predictions, eval_results = fine_tune_model(
