@@ -1,8 +1,9 @@
+import random
+import pandas as pd
 import numpy as np
 import nlpaug.augmenter.word as naw
 
-
-REMOVE_WORD_PROB = 0
+REMOVE_WORD_PROB = 0.4
 DEUTSCH_LAN = 'de'
 RUSSIAN_LAN = 'ru'
 ALL_LANGUAGES = [DEUTSCH_LAN, RUSSIAN_LAN]
@@ -44,42 +45,37 @@ class DataAugmentation:
 
     def randomly_augment_text(self, text, remove_word_prob, language):
         # Use back translation
-        augmented_text = self.back_translation_aug_de(text, language)
+        augmented_text = self.back_translation(text, language)
 
         # Remove words exponentially with given probability
-        done = False
+        while np.random.rand() > remove_word_prob:
+            augmented_text = self.remove_word_randomly(augmented_text)
+            remove_word_prob = remove_word_prob ** 2
 
-        while not done:
-
-            if np.random.rand() < remove_word_prob:
-                augmented_text = self.remove_word_aug(augmented_text)
-                remove_word_prob = remove_word_prob ** 2
-
-            else:
-                done = True
-
-        return text
+        return augmented_text
 
 
-def augment_data(df):
+def augment_data(df, seed=42):
+    # Change seed
+    random.seed(seed)
+    np.random.seed(seed)
+
     data_aug = DataAugmentation()
-    new_dfs_aug = {}
+
+    new_aug_df = df.copy()
+    new_aug_df['is_augmented'] = False
 
     for language in ALL_LANGUAGES:
         df_language = df.copy()
 
-        df_language['overview'] = df_language['overview'].apply(
-            lambda text: data_aug.randomly_augment_text(text, REMOVE_WORD_PROB, language)
+        translations = data_aug.randomly_augment_text(
+            df_language['overview'].tolist(), REMOVE_WORD_PROB, language
         )
 
-        new_dfs_aug[language] = df_language
+        df_language['overview'] = translations
 
-    return new_dfs_aug
+        df_language['is_augmented'] = True
 
+        new_aug_df = pd.concat([new_aug_df, df_language])
 
-def main():
-    pass
-
-
-if __name__ == "__main__":
-    main()
+    return new_aug_df
