@@ -4,9 +4,12 @@ import numpy as np
 import pandas as pd
 import glob
 import json
+import nlpaug
 from tqdm import tqdm
 import fire
 from sklearn.model_selection import train_test_split
+
+from data_augmentation import augment_data
 
 
 def txt_file_to_series(txt_file_path):
@@ -61,6 +64,12 @@ def parse_address(df):
     return new_df
 
 
+def keep_only_first_image(df):
+    df['images'] = df['images'].apply(lambda x: x[0])
+    df = df.rename(columns={'images': 'image'})
+    return df
+
+
 def split_train_test_by_city(df, random_state: int = 42, train_size: float = 0.85):
     train_sets = []
     test_sets = []
@@ -89,6 +98,7 @@ def reorder_columns(df):
         'city',
         'state',
         'overview',
+        'image',
         'price'
     ]
     return df[order]
@@ -98,6 +108,7 @@ def build_df_from_data(train_path: str = "train_data.csv",
                        val_path: str = "validation_data.csv",
                        base_data_dir: str = "data"):
     df = build_raw_df(base_data_dir)
+    df = keep_only_first_image(df)
     df = parse_numeric_cols(df)
     df = parse_address(df)
     df_train, df_test = split_train_test_by_city(df)
@@ -146,12 +157,16 @@ def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
         out.append((current_str, row['price']))
     return out
 
-def main():
-    pass
+
+def augment_dataframe(df: pd.DataFrame, random_state: int = 42):
+    return augment_data(df, random_state)
+
 
 if __name__ == '__main__':
     # train, test = build_df_from_data()
     # str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
     # x = format_dataframe(train, str_format)
     fire.Fire(build_df_from_data)
-
+    # train, test = build_df_from_data()
+    # augmented_df = augment_dataframe(train)
+    # augmented_df.to_csv("train_data_with_aug.csv", index=False)

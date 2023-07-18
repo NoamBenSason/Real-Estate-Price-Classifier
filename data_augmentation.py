@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import nlpaug.augmenter.word as naw
 
-REMOVE_WORD_PROB = 0.4
+REMOVE_WORD_PROB = 0.8
 DEUTSCH_LAN = 'de'
 RUSSIAN_LAN = 'ru'
 ALL_LANGUAGES = [DEUTSCH_LAN, RUSSIAN_LAN]
@@ -46,11 +46,13 @@ class DataAugmentation:
     def randomly_augment_text(self, text, remove_word_prob, language):
         # Use back translation
         augmented_text = self.back_translation(text, language)
+        removed_words = 0
 
         # Remove words exponentially with given probability
-        while np.random.rand() > remove_word_prob:
+        while np.random.rand() > remove_word_prob and removed_words < 10:
             augmented_text = self.remove_word_randomly(augmented_text)
-            remove_word_prob = remove_word_prob ** 2
+            removed_words += 1
+            # remove_word_prob = remove_word_prob ** 2
 
         return augmented_text
 
