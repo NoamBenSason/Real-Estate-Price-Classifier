@@ -36,7 +36,7 @@ def wandb_zero_shot(config=None):
         y_hat = []
         y = []
         for i in range(0, len(val_data), BATCH_SIZE):
-            losses, truncated_formatted_sentences, true_data_completion, predicted_prices = zero_shot(
+            truncated_formatted_sentences, true_data_completion, predicted_prices = zero_shot(
                 model_name,
                 model_for_lm,
                 mask_format,
