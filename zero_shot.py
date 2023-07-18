@@ -1,4 +1,5 @@
-from transformers import AutoTokenizer, BertForMaskedLM, RobertaForMaskedLM, ElectraForMaskedLM
+from transformers import AutoTokenizer, BertForMaskedLM, RobertaForMaskedLM, \
+    ElectraForMaskedLM
 import torch
 from preprocessing import build_df_from_data, format_dataframe
 from evaluate import load
@@ -29,7 +30,8 @@ def predictions_to_numbers(predicted_words):
     """
     num_predictions = []
     for i in range(0, len(predicted_words), 2):
-        num_predictions.append(float(f"{predicted_words[i]}.{predicted_words[i + 1]}".replace(" ", "")))
+        num_predictions.append(float(
+            f"{predicted_words[i]}.{predicted_words[i + 1]}".replace(" ", "")))
     return num_predictions
 
 
@@ -69,8 +71,8 @@ def save_to_buffer(model_name, losses, examples, buffer):
     return buffer
 
 
-def save_results(buffer):
-    with open('results_zero_shot.txt', 'w') as f:
+def save_results(buffer, filename):
+    with open(f'{filename}.txt', 'w') as f:
         f.write(buffer)
 
 
@@ -96,33 +98,40 @@ def zero_shot(model_name, model_for_lm, mask_format, train_data):
 
     added_format = FORMAT_STR.format(mask_format=mask_format)
 
-    overview_truncation_len = max_length_tokenizer - len(tokenizer.encode(added_format))
+    overview_truncation_len = max_length_tokenizer - len(
+        tokenizer.encode(added_format))
     truncated_masked_data_sentences = tokenizer.batch_decode(
-        tokenizer(masked_data_sentences, max_length=overview_truncation_len, truncation=True)['input_ids'])
+        tokenizer(masked_data_sentences, max_length=overview_truncation_len,
+                  truncation=True)['input_ids'])
 
-    truncated_formatted_sentences = [s + added_format for s in truncated_masked_data_sentences]
-    inputs = tokenizer(truncated_formatted_sentences, return_tensors="pt", truncation=True, padding=True)
+    truncated_formatted_sentences = [s + added_format for s in
+                                     truncated_masked_data_sentences]
+    inputs = tokenizer(truncated_formatted_sentences, return_tensors="pt",
+                       truncation=True, padding=True)
 
     with torch.no_grad():
         # logits.shape: [number of sentences, tokens (maximum in all sentences), probs]
         logits = model(**inputs).logits
 
     max_val = torch.max(logits)
-    mask_token_indexs = (inputs.input_ids == tokenizer.mask_token_id).nonzero(as_tuple=True)
+    mask_token_indexs = (inputs.input_ids == tokenizer.mask_token_id).nonzero(
+        as_tuple=True)
     numerical_ids = get_numerical_tokens(tokenizer)
 
     # maximazing only the numerical token to only them will get picked
     for indx in numerical_ids:
-        logits[mask_token_indexs[0], mask_token_indexs[1], indx] = logits[mask_token_indexs[0],
-        mask_token_indexs[1], indx] + max_val
+        logits[mask_token_indexs[0], mask_token_indexs[1], indx] = logits[
+                                                                       mask_token_indexs[
+                                                                           0],
+                                                                       mask_token_indexs[
+                                                                           1], indx] + max_val
 
-    predicted_token_id = logits[mask_token_indexs[0], mask_token_indexs[1]].argmax(axis=-1)
+    predicted_token_id = logits[
+        mask_token_indexs[0], mask_token_indexs[1]].argmax(axis=-1)
     predicted_words = tokenizer.batch_decode(predicted_token_id)
     predicted_prices = predictions_to_numbers(predicted_words)
 
-    losses = evaluate(predicted_prices, true_data_completion)
-
-    return losses, truncated_formatted_sentences, true_data_completion, predicted_prices
+    return truncated_formatted_sentences, true_data_completion, predicted_prices
 
 
 def main():
@@ -131,22 +140,24 @@ def main():
 
     buffer = ""
     for model_name, model_for_lm, mask_format in MODELS:
-        train_data = format_dataframe("train_data.csv", "{overview}")
-        avg_losses = [0, 0, 0]
+        y = []
+        y_hat = []
+        val_data = format_dataframe("validation_data.csv",
+                                    "{overview}")  # TODO maybe val data
         examples = []
-        for i in range(0, len(train_data), BATCH_SIZE):
-            losses, truncated_formatted_sentences, true_data_completion, predicted_prices = zero_shot(
-                model_name, model_for_lm, mask_format, train_data[i:i + BATCH_SIZE])
+        for i in range(0, len(val_data), BATCH_SIZE):
+            truncated_formatted_sentences, true_data_completion, predicted_prices = zero_shot(
+                model_name, model_for_lm, mask_format,
+                val_data[i:i + BATCH_SIZE])
+            y_hat.extend(predicted_prices)
+            y.extend(true_data_completion)
             if i == 0:
                 examples = [truncated_formatted_sentences[:N_EXAMPLE_SAMPLES],
                             predicted_prices[:N_EXAMPLE_SAMPLES],
                             true_data_completion[:N_EXAMPLE_SAMPLES]]
-            avg_losses[0] += losses[0]
-            avg_losses[1] += losses[1]
-            avg_losses[2] += losses[2]
-        num_batches = ceil(len(train_data) / BATCH_SIZE)
-        buffer = save_to_buffer(model_name, [avg / num_batches for avg in avg_losses], examples, buffer)
-    save_results(buffer)
+        losses = evaluate(y_hat, y)
+        buffer = save_to_buffer(model_name, losses, examples, buffer)
+    save_results(buffer, "zero_shot_results")
 
 
 if __name__ == '__main__':
