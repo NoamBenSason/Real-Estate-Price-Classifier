@@ -13,7 +13,7 @@ MODELS_DICT = {
 
 def get_config():
     sweep_config = {}
-    sweep_config['method'] = 'random'
+    sweep_config['method'] = 'grid'
     sweep_config['metric'] = {'name': 'mse', 'goal': 'maximize'}
     sweep_config['name'] = f"zero_shot"
 
@@ -26,7 +26,7 @@ def get_config():
 
 
 def wandb_zero_shot(config=None):
-    with wandb.init(config=config):
+    with wandb.init(config=config,group="zero_shot"):
         config = wandb.config
         buffer = ""
         model_name = config["model_name"]
@@ -56,5 +56,5 @@ def wandb_zero_shot(config=None):
 
 
 if __name__ == '__main__':
-    sweep_id = wandb.sweep(get_config(), project="zero_shot", entity="selling_bat_yam")
-    wandb.agent(sweep_id, wandb_zero_shot, count=1)
+    sweep_id = wandb.sweep(get_config(), project="anlp_project", entity="selling_bat_yam")
+    wandb.agent(sweep_id, wandb_zero_shot, count=3)
