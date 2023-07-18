@@ -179,7 +179,7 @@ if __name__ == '__main__':
     # train, test = build_df_from_data()
     # str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
     # x = format_dataframe(train, str_format)
-    # fire.Fire(build_df_from_data)
-    train, test = build_df_from_data()
-    augmented_df = augment_dataframe(train)
-    augmented_df.to_csv("train_data_with_aug_first5.csv", index=False)
+    fire.Fire(build_df_from_data)
+    # train, test = build_df_from_data()
+    # augmented_df = augment_dataframe(train)
+    # augmented_df.to_csv("train_data_with_aug.csv", index=False)

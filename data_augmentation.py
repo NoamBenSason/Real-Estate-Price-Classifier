@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import nlpaug.augmenter.word as naw
 
-REMOVE_WORD_PROB = 0.8
+REMOVE_WORD_PROB = 0
 DEUTSCH_LAN = 'de'
 RUSSIAN_LAN = 'ru'
 ALL_LANGUAGES = [DEUTSCH_LAN, RUSSIAN_LAN]
@@ -61,7 +61,7 @@ class DataAugmentation:
             raise NotImplemented
 
         augmented_data = augmentor.augment(overview_text)
-        augmentor.model.to(torch.device("cpu"))
+        # augmentor.model.to(torch.device("cpu"))
         del augmentor
         return augmented_data
 
@@ -71,7 +71,7 @@ class DataAugmentation:
         removed_words = 0
 
         # Remove words exponentially with given probability
-        while np.random.rand() > remove_word_prob and removed_words < 10:
+        while np.random.rand() < remove_word_prob and removed_words < 10:
             augmented_text = self.remove_word_randomly(augmented_text)
             removed_words += 1
             # remove_word_prob = remove_word_prob ** 2
