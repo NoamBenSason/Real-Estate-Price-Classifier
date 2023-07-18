@@ -47,8 +47,10 @@ def wandb_zero_shot(config=None):
             avg_losses[0] += losses[0]
             avg_losses[1] += losses[1]
             avg_losses[2] += losses[2]
-            wandb.log({"r2_squared": losses[0], "mse": losses[1], "mae": losses[2]})
         num_batches = ceil(len(train_data) / BATCH_SIZE)
+        wandb.log({"r2_squared": losses[0] / num_batches,
+                   "mse": losses[1] / num_batches,
+                   "mae": losses[2] / num_batches})
         buffer = save_to_buffer(model_name, [avg / num_batches for avg in avg_losses], examples, buffer)
         save_results(buffer)
 

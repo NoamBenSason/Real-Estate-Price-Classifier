@@ -8,7 +8,7 @@ SLICE_DATA_FOR_DEBUG = 3
 X_INDX_IN_TUPLE = 0
 Y_INDX_IN_TUPLE = 1
 N_EXAMPLE_SAMPLES = 3
-BATCH_SIZE = 50
+BATCH_SIZE = 16
 # FORMAT_STR = "The price of this house is {mask_format}.{mask_format}$ million."
 FORMAT_STR = "The price of this house is ({mask_format}.{mask_format})$ million."
 
