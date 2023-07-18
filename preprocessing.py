@@ -4,9 +4,11 @@ import numpy as np
 import pandas as pd
 import glob
 import json
-import nlpaug
+import wget
 from tqdm import tqdm
 import fire
+from multiprocessing import cpu_count
+from multiprocessing.pool import ThreadPool
 from sklearn.model_selection import train_test_split
 
 from data_augmentation import augment_data
@@ -121,6 +123,17 @@ def build_df_from_data(train_path: str = "train_data.csv",
     return df_train, df_test
 
 
+def download_url(args):
+    input_path, out_path = args[0], args[1]
+    wget.download(input_path, out_path)
+    return out_path
+
+
+def download_parallel(args):
+    cpus = cpu_count()
+    results = ThreadPool(cpus - 1).imap_unordered(download_url, args)
+
+
 def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
                      nan_value: str = "NaN"):
     """
@@ -166,7 +179,7 @@ if __name__ == '__main__':
     # train, test = build_df_from_data()
     # str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
     # x = format_dataframe(train, str_format)
-    fire.Fire(build_df_from_data)
-    # train, test = build_df_from_data()
-    # augmented_df = augment_dataframe(train)
-    # augmented_df.to_csv("train_data_with_aug.csv", index=False)
+    # fire.Fire(build_df_from_data)
+    train, test = build_df_from_data()
+    augmented_df = augment_dataframe(train)
+    augmented_df.to_csv("train_data_with_aug_first5.csv", index=False)

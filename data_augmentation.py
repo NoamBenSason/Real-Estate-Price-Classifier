@@ -1,4 +1,5 @@
 import random
+import torch
 import pandas as pd
 import numpy as np
 import nlpaug.augmenter.word as naw
@@ -7,6 +8,8 @@ REMOVE_WORD_PROB = 0.8
 DEUTSCH_LAN = 'de'
 RUSSIAN_LAN = 'ru'
 ALL_LANGUAGES = [DEUTSCH_LAN, RUSSIAN_LAN]
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class DataAugmentation:
@@ -18,15 +21,17 @@ class DataAugmentation:
 
         self.replace_word_aug = naw.SynonymAug(aug_src='wordnet')
 
-        self.back_translation_aug_de = naw.BackTranslationAug(
-            from_model_name='facebook/wmt19-en-de',
-            to_model_name='facebook/wmt19-de-en'
-        )
-
-        self.back_translation_aug_ru = naw.BackTranslationAug(
-            from_model_name='facebook/wmt19-en-ru',
-            to_model_name='facebook/wmt19-ru-en'
-        )
+        # self.back_translation_aug_de = naw.BackTranslationAug(
+        #     from_model_name='facebook/wmt19-en-de',
+        #     to_model_name='facebook/wmt19-de-en',
+        #     device=device
+        # )
+        #
+        # self.back_translation_aug_ru = naw.BackTranslationAug(
+        #     from_model_name='facebook/wmt19-en-ru',
+        #     to_model_name='facebook/wmt19-ru-en',
+        #     device=device
+        # )
 
     def add_word_contextual(self, overview_text):
         return self.add_word_aug.augment(overview_text)
@@ -39,9 +44,26 @@ class DataAugmentation:
 
     def back_translation(self, overview_text, language):
         if language == DEUTSCH_LAN:
-            return self.back_translation_aug_de.augment(overview_text)
-        if language == RUSSIAN_LAN:
-            return self.back_translation_aug_ru.augment(overview_text)
+            augmentor = naw.BackTranslationAug(
+                from_model_name='facebook/wmt19-en-de',
+                to_model_name='facebook/wmt19-de-en',
+                device=device,
+                batch_size=6
+            )
+        elif language == RUSSIAN_LAN:
+            augmentor = naw.BackTranslationAug(
+                from_model_name='facebook/wmt19-en-ru',
+                to_model_name='facebook/wmt19-ru-en',
+                device=device,
+                batch_size=6
+            )
+        else:
+            raise NotImplemented
+
+        augmented_data = augmentor.augment(overview_text)
+        augmentor.model.to(torch.device("cpu"))
+        del augmentor
+        return augmented_data
 
     def randomly_augment_text(self, text, remove_word_prob, language):
         # Use back translation
