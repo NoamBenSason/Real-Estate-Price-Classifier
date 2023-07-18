@@ -1,0 +1,102 @@
+----------------------------------------------------------------------------------------------------------------
+Model name: bert-base-uncased
+R2 Squard loss: -0.067
+MSE loss: 5.324007591361165
+MAE loss: 1.0172740595278593
+
+Sample 0:
+[CLS] this nicely renovated and well kept 1 bedroom 1 bath is located across the street from long beach state and the long beach va. it's has quick and easy access to the 405, pch, 7th street and bellflower blvd. located on the 1st floor you can walk out directly from your patio to the pool, jacuzzi, bbq and garden areas. this is a secure building with gated parking as well. [SEP]The price of this house is ([MASK].[MASK])$ million.
+
+Price prediction:
+1.5
+True price:
+0.375
+----------------------------------------------------------------------------------------------------------------
+Sample 1:
+[CLS] welcome to 3660 n pioneer, a spacious 4 bedroom 2 bath ranch style home in the coveted el dorado park estates. look no further, here is your forever home to make your own. walk in and be immediately greeted in the large living room by the sliders opening up unto the expansive backyard. primary bedroom also has sliders opening up onto the backyard. this open lay - out is perfect for family living and there is enough space for everyone! house has just been freshly painted and is ready for you to move right in! primo location in a pride of ownership neighborhood, close to el dorado park and golf course, shopping, dining, entertainment, the 605 / 405 and 91 freeways. also close to the highly desirable newcomb k - 8 academy. don't wait, this one won't last long! [SEP]The price of this house is ([MASK].[MASK])$ million.
+
+Price prediction:
+1.99
+True price:
+0.875
+----------------------------------------------------------------------------------------------------------------
+Sample 2:
+[CLS] welcome to this stunning duplex located in the beautiful city of long beach! with a total of 1494 square feet, this property boasts two separate structures that provide ample space and privacy for multiple occupants. one of the best features of this property is that it will be delivered vacant at the close of escrow, which means that you can move in right away and start enjoying your new home or remodel and get the highest rents possible! the front unit features two bedrooms and one bathroom, perfect for a small family or roommates. the unit is equipped has a spacious living room, an open kitchen, and a cozy dining area. the natural light that floods this unit creates a warm and welcoming atmosphere that is sure to impress. the back unit is a charming one - bedroom and one - bathroom space that is perfect for a single person or a couple. this unit is a blank surface ready for you to make your own. the location of this duplex is truly unbeatable. it is situated in a quiet and peaceful neighborhood, yet it is just minutes away from all the amenities and attractions that long beach has to offer. you will have easy access to the beach, shopping, dining, and entertainment options, making it the perfect place to call home. don't miss out on the opportunity to own this beautiful duplex in long beach, ca. contact me today to schedule a viewing and start your journey to homeownership! [SEP]The price of this house is ([MASK].[MASK])$ million.
+
+Price prediction:
+1.1
+True price:
+0.63
+----------------------------------------------------------------------------------------------------------------
+Most common predicted prices:
+1.1 : 143
+1.99 : 95
+1.5 : 21
+----------------------------------------------------------------------------------------------------------------
+Model name: roberta-base
+R2 Squard loss: -0.252
+MSE loss: 6.24902118733645
+MAE loss: 1.1178663807946283
+
+Sample 0:
+<s>This nicely renovated and well kept 1 bedroom 1 bath is located across the street from Long Beach State and the Long Beach VA. It's has quick and easy access to the 405, PCH, 7th Street and Bellflower Blvd. Located on the 1st floor you can walk out directly from your patio to the pool, jacuzzi, BBQ and garden areas. This is a secure building with gated parking as well.</s>The price of this house is (<mask>.<mask>)$ million.
+
+Price prediction:
+0.0
+True price:
+0.375
+----------------------------------------------------------------------------------------------------------------
+Sample 1:
+<s>Welcome to 3660 N Pioneer,  a spacious 4 bedroom 2 bath ranch style home in the coveted El Dorado Park Estates.  Look no further, here is your forever home to make your own.  Walk in and be immediately greeted in the large living room by the sliders opening up unto the expansive backyard.  Primary bedroom also has sliders opening up onto the backyard.  This open lay-out is perfect for family living and there is enough space for everyone!  House has just been freshly painted and is ready for you to move right in!  Primo location in a pride of ownership neighborhood,  close to El Dorado Park and Golf Course, shopping, dining, entertainment, the 605/405 and 91 freeways.  Also close to the highly desirable Newcomb K-8 Academy.  Don't wait, this one won't last long!</s>The price of this house is (<mask>.<mask>)$ million.
+
+Price prediction:
+0.0
+True price:
+0.875
+----------------------------------------------------------------------------------------------------------------
+Sample 2:
+<s>Welcome to this stunning duplex located in the beautiful city of Long Beach! With a total of 1494 square feet, this property boasts two separate structures that provide ample space and privacy for multiple occupants. One of the best features of this property is that it will be delivered vacant at the close of escrow, which means that you can move in right away and start enjoying your new home or remodel and get the highest rents possible! The front unit features two bedrooms and one bathroom, perfect for a small family or roommates. The unit is equipped has a spacious living room, an open kitchen, and a cozy dining area. The natural light that floods this unit creates a warm and welcoming atmosphere that is sure to impress.  The back unit is a charming one-bedroom and one-bathroom space that is perfect for a single person or a couple. This unit is a blank surface ready for you to make your own. The location of this duplex is truly unbeatable. It is situated in a quiet and peaceful neighborhood, yet it is just minutes away from all the amenities and attractions that Long Beach has to offer. You will have easy access to the beach, shopping, dining, and entertainment options, making it the perfect place to call home. Don't miss out on the opportunity to own this beautiful duplex in Long Beach, CA. Contact me today to schedule a viewing and start your journey to homeownership!</s>The price of this house is (<mask>.<mask>)$ million.
+
+Price prediction:
+0.0
+True price:
+0.63
+----------------------------------------------------------------------------------------------------------------
+Most common predicted prices:
+0.0 : 235
+0.2 : 16
+0.1 : 7
+----------------------------------------------------------------------------------------------------------------
+Model name: google/electra-base-generator
+R2 Squard loss: -0.117
+MSE loss: 5.574144066767705
+MAE loss: 1.2212833391941191
+
+Sample 0:
+[CLS] this nicely renovated and well kept 1 bedroom 1 bath is located across the street from long beach state and the long beach va. it's has quick and easy access to the 405, pch, 7th street and bellflower blvd. located on the 1st floor you can walk out directly from your patio to the pool, jacuzzi, bbq and garden areas. this is a secure building with gated parking as well. [SEP]The price of this house is ([MASK].[MASK])$ million.
+
+Price prediction:
+1.99
+True price:
+0.375
+----------------------------------------------------------------------------------------------------------------
+Sample 1:
+[CLS] welcome to 3660 n pioneer, a spacious 4 bedroom 2 bath ranch style home in the coveted el dorado park estates. look no further, here is your forever home to make your own. walk in and be immediately greeted in the large living room by the sliders opening up unto the expansive backyard. primary bedroom also has sliders opening up onto the backyard. this open lay - out is perfect for family living and there is enough space for everyone! house has just been freshly painted and is ready for you to move right in! primo location in a pride of ownership neighborhood, close to el dorado park and golf course, shopping, dining, entertainment, the 605 / 405 and 91 freeways. also close to the highly desirable newcomb k - 8 academy. don't wait, this one won't last long! [SEP]The price of this house is ([MASK].[MASK])$ million.
+
+Price prediction:
+1.5
+True price:
+0.875
+----------------------------------------------------------------------------------------------------------------
+Sample 2:
+[CLS] welcome to this stunning duplex located in the beautiful city of long beach! with a total of 1494 square feet, this property boasts two separate structures that provide ample space and privacy for multiple occupants. one of the best features of this property is that it will be delivered vacant at the close of escrow, which means that you can move in right away and start enjoying your new home or remodel and get the highest rents possible! the front unit features two bedrooms and one bathroom, perfect for a small family or roommates. the unit is equipped has a spacious living room, an open kitchen, and a cozy dining area. the natural light that floods this unit creates a warm and welcoming atmosphere that is sure to impress. the back unit is a charming one - bedroom and one - bathroom space that is perfect for a single person or a couple. this unit is a blank surface ready for you to make your own. the location of this duplex is truly unbeatable. it is situated in a quiet and peaceful neighborhood, yet it is just minutes away from all the amenities and attractions that long beach has to offer. you will have easy access to the beach, shopping, dining, and entertainment options, making it the perfect place to call home. don't miss out on the opportunity to own this beautiful duplex in long beach, ca. contact me today to schedule a viewing and start your journey to homeownership! [SEP]The price of this house is ([MASK].[MASK])$ million.
+
+Price prediction:
+1.99
+True price:
+0.63
+----------------------------------------------------------------------------------------------------------------
+Most common predicted prices:
+1.99 : 127
+1.5 : 96
+1.95 : 16

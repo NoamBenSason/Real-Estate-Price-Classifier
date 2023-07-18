@@ -1,3 +1,5 @@
+from collections import Counter
+
 from transformers import AutoTokenizer, BertForMaskedLM, RobertaForMaskedLM, \
     ElectraForMaskedLM
 import torch
@@ -52,7 +54,7 @@ def get_numerical_tokens(tokenizer):
     return numerical_ids
 
 
-def save_to_buffer(model_name, losses, examples, buffer):
+def save_to_buffer(model_name, losses, examples, counter, buffer):
     samples = examples[0]
     predictions = examples[1]
     labels = examples[2]
@@ -68,6 +70,11 @@ def save_to_buffer(model_name, losses, examples, buffer):
         buffer += f"Price prediction:\n{predictions[i]}\n"
         buffer += f"True price:\n{labels[i]}\n"
         buffer += "-" * 112 + "\n"
+
+    buffer += "Most common predicted prices:\n"
+    for item, count in counter.most_common(3):
+        buffer += f"{item} : {count}\n"
+
     return buffer
 
 
@@ -156,7 +163,8 @@ def main():
                             predicted_prices[:N_EXAMPLE_SAMPLES],
                             true_data_completion[:N_EXAMPLE_SAMPLES]]
         losses = evaluate(y_hat, y)
-        buffer = save_to_buffer(model_name, losses, examples, buffer)
+        counter = Counter(map(lambda x: str(x), y_hat))
+        buffer = save_to_buffer(model_name, losses, examples, counter, buffer)
     save_results(buffer, "zero_shot_results")
 
 
