@@ -3,6 +3,7 @@ from transformers import BertForMaskedLM, RobertaForMaskedLM, ElectraForMaskedLM
 from zero_shot import save_to_buffer, save_results, N_EXAMPLE_SAMPLES, \
     zero_shot, BATCH_SIZE, ceil, evaluate
 from preprocessing import format_dataframe
+from collections import Counter
 
 MODELS_DICT = {
     # model name: model object, mask format
@@ -52,10 +53,12 @@ def wandb_zero_shot(config=None):
         wandb.log({"r2_squared": losses[0],
                    "mse": losses[1],
                    "mae": losses[2]})
-        buffer = save_to_buffer(model_name,
-                                losses,
-                                examples, buffer)
-        save_results(buffer, f"{model_name}_zero_shot_results.txt")
+        # counter = Counter(map(lambda x: str(x), y_hat))
+        # buffer = save_to_buffer(model_name,
+        #                         losses,
+        #                         examples, counter, buffer)
+
+        # save_results(buffer, f"{model_name}_zero_shot_results")
 
 
 if __name__ == '__main__':
