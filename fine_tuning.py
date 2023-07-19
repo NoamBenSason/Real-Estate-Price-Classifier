@@ -12,7 +12,7 @@ import argparse
 
 MODELS = ['bert-base-uncased']  # TODO add other models
 SPECIAL_TOKENS = ['[bd]', '[br]', '[address]', '[overview]', '[sqft]']
-FINE_TUNNING_FORMAT = "[bd]{bed}[br]{bath}[sqft]{sqft}[overview]{overview}"
+FINE_TUNNING_FORMAT = "[bd]{bed}[br]{bath}[sqft]{sqft}[address]{address}[overview]{overview}"
 
 
 class SmoothL1Trainer(Trainer):

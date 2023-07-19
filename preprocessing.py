@@ -183,6 +183,7 @@ def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
         elements_map = dict(row)
         for col in ['bed', 'bath', 'sqft']:
             elements_map[col] = int(elements_map[col]) if not np.isnan(elements_map[col]) else nan_value
+        elements_map['address'] = f"{row['street']}, {row['city']},{row['state']}"
         current_str = format_str.format(**elements_map)
 
         if with_image:
