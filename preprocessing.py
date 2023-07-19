@@ -145,7 +145,8 @@ def download_parallel(args):
 
 def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
                      nan_value: str = "NaN", with_image: bool = False,
-                     image_force_download: bool = False):
+                     image_force_download: bool = False,
+                     image_download_dir:str = "images"):
     """
     Accepts either a path to dataframe or a dataframe.
     :param df_or_df_path: The dataframe or the path to it
@@ -176,7 +177,7 @@ def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
     df = df_or_df_path
     out = []
     if with_image:
-        os.makedirs("images", exist_ok=True)
+        os.makedirs(image_download_dir, exist_ok=True)
 
     for _, row in tqdm(list(df.iterrows()),
                        desc="Formatting data"):
@@ -188,7 +189,7 @@ def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
 
         if with_image:
             input_paths = row['images'].split()
-            out_paths = [os.path.join('images', f"{row['zpid']}_{i}.jpg") for i in range(len(input_paths))]
+            out_paths = [os.path.join(image_download_dir, f"{row['zpid']}_{i}.jpg") for i in range(len(input_paths))]
             for in_path, out_path in zip(input_paths, out_paths):
                 download_url((in_path, out_path, image_force_download))
             out.append((current_str, out_paths, row['price']))
@@ -205,7 +206,7 @@ if __name__ == '__main__':
     fire.Fire(build_df_from_data)
     # str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
     # train, test = build_df_from_data(n_images=2)
-    # x = format_dataframe(train, str_format, with_image=True)
+    # x = format_dataframe(test, str_format, with_image=True, image_download_dir="validation_images")
     # a = 1
     # augmented_df = augment_dataframe(train)
     # augmented_df.to_csv("train_data_with_aug.csv", index=False)
