@@ -7,10 +7,12 @@ from preprocessing import format_dataframe
 from transformers import TrainingArguments, Trainer, \
     AutoModelForSequenceClassification, AutoTokenizer
 import torch
+from data_augmentation import DataAugmentation
+import argparse
 
-MODELS = ['bert-base-uncased']
+MODELS = ['bert-base-uncased']  # TODO add other models
 SPECIAL_TOKENS = ['[bd]', '[br]', '[address]', '[overview]', '[sqft]']
-FINE_TUNNING_FORMAT = "[bd]{bed}[br]{bath}[sqft]{sqft}[overview]{overview}[SEP]"
+FINE_TUNNING_FORMAT = "[bd]{bed}[br]{bath}[sqft]{sqft}[overview]{overview}"
 
 
 class SmoothL1Trainer(Trainer):
@@ -79,30 +81,52 @@ def train_model(model, tokenizer, train_dataset, validation_dataset,
                                    logging_strategy="steps",
                                    logging_steps=50,
                                    report_to=["wandb"] if use_wandb else [
-                                       'none'])
+                                       'none'],
+                                   remove_unused_columns=False)
     beta = config['beta'] if config is not None else 0.5
     if config is not None:
         train_args.learning_rate = config['learning_rate']
         train_args.num_train_epochs = config['epoch']
         train_args.weight_decay = config['weight_decay']
 
+    trainer = Trainer(model=model,
+                      args=train_args,
+                      train_dataset=train_dataset,
+                      eval_dataset=validation_dataset,
+                      compute_metrics=get_metrics_func(),
+                      tokenizer=tokenizer,
 
-    trainer = SmoothL1Trainer(model=model,
-                              args=train_args,
-                              train_dataset=train_dataset,
-                              eval_dataset=validation_dataset,
-                              compute_metrics=get_metrics_func(),
-                              tokenizer=tokenizer,
-                              beta = beta
-                              )
+                      )
 
     trainer.train()
     return trainer, trainer.evaluate(eval_dataset=validation_dataset)
 
 
+def get_data_augmentor(tokenizer, del_p):
+    aug = DataAugmentation()
+
+    def augmentor(batch):
+        batch['overview'] = aug.random_remove(batch['overview'], del_p)
+        batch['description'] = [FINE_TUNNING_FORMAT.format(bed=bed,bath=bath,
+                                                           sqtf=sqft,
+                                                           city=city,overview=overview)
+
+            for bed,bath,sqft,city,overview in zip(
+                                                    batch['bed'],
+                                                    batch['bath'],
+                                                    batch['sqft'],
+                                                    batch['city'],
+                                                    batch['overview'])]
+        batch['input_ids'] = tokenizer(batch['description'], truncation=True)['input_ids']
+        batch['label'] = batch['price']
+        return batch
+
+    return augmentor
+
+
 def fine_tune_model(model_name, special_tokens, train_dataset,
                     validation_dataset, save_strategy,
-                    config=None, use_wandb=False):
+                    config=None, use_wandb=False, use_augment=False, del_p=0.1):
     model = AutoModelForSequenceClassification.from_pretrained(model_name,
                                                                num_labels=1)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -112,17 +136,21 @@ def fine_tune_model(model_name, special_tokens, train_dataset,
     model.resize_token_embeddings(len(tokenizer))
 
     # Encode data
-    encoded_train_dataset = train_dataset.map(
-        lambda x: tokenize_func(x, tokenizer), batched=True)
-    encoded_validation_dataset = validation_dataset.map(
+    if not use_augment:
+        train_dataset = train_dataset.map(
+            lambda x: tokenize_func(x, tokenizer), batched=True)
+    else:
+        train_dataset.set_transform(get_data_augmentor(tokenizer, del_p),
+                                    columns=['bed', 'bath', 'sqft', 'city',
+    validation_dataset = validation_dataset.map(
         lambda x: tokenize_func(x, tokenizer), batched=True)
 
     trainer, eval_results = train_model(
-        model, tokenizer, encoded_train_dataset, encoded_validation_dataset,
+        model, tokenizer, train_dataset, validation_dataset,
         save_strategy, config, use_wandb
     )
 
-    return trainer.predict(encoded_validation_dataset), eval_results
+    return trainer.predict(validation_dataset), eval_results
 
 
 def convert_data(data):
@@ -134,12 +162,24 @@ def convert_data(data):
 
 
 def main():
-    train_dataset = convert_data('train_data.csv')
+    args = argparse.ArgumentParser()
+    args.add_argument("--augment", default=False,type=bool, help="use "
+                                                                 "augmented data")
+    args.add_argument("--del_p", default=0.1,type=float, help="probability to "
+                                                         "delete")
+
+    args = args.parse_args()
+    if not args.augment:
+        train_dataset = convert_data('train_data.csv')
+    else:
+        train_dataset = pd.read_csv('train_data_with_aug.csv')
+        train_dataset = Dataset.from_pandas(train_dataset)
     validation_dataset = convert_data('validation_data.csv')
 
     for model_name in MODELS:
         predictions, eval_results = fine_tune_model(
-            model_name, SPECIAL_TOKENS, train_dataset, validation_dataset, "no")
+            model_name, SPECIAL_TOKENS, train_dataset, validation_dataset,
+            "no", use_augment=args.augment, del_p=args.del_p)
 
         print(eval_results)
 

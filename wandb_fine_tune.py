@@ -1,6 +1,7 @@
 import wandb
 from datetime import datetime
 from fine_tuning import fine_tune_model, SPECIAL_TOKENS, convert_data
+import argparse
 
 
 def get_time():
@@ -11,7 +12,7 @@ def get_time():
     return now.strftime("%d-%m-%Y__%H-%M-%S")
 
 
-def get_config():
+def get_config(augment, del_p):
     sweep_config = {'method': 'random',
                     'metric': {'name': 'eval/mse', 'goal': 'minimize'}}
 
@@ -31,6 +32,12 @@ def get_config():
         },
         'beta': {
             'values': [0.0, 0.2, 0.5, 1., 1.5]
+        },
+        'augment': {
+            'value': augment
+        },
+        'del_p': {
+            'value': del_p
         }
     }
 
@@ -41,14 +48,22 @@ def get_config():
 def wandb_run(config=None):
     with wandb.init(config=config, name=f"selling_bat_yam_{get_time()}"):
         config = wandb.config
-        train = convert_data("train_data.csv")
+        if config['augment']:
+            train = convert_data("train_data_with_aug.csv")
+        else:
+            train = convert_data("train_data.csv")
         val = convert_data("validation_data.csv")
         fine_tune_model(config['model_name'], SPECIAL_TOKENS, train,
                         val, "no", config, True)
 
 
 def main():
-    sweep_config = get_config()
+    args = argparse.ArgumentParser()
+    args.add_argument("--augment", default=False, help="use augmented data")
+    args.add_argument("--del_p", default=0.1, help="probability to delete")
+
+    args = args.parse_args()
+    sweep_config = get_config(args.augment, args.del_p)
     sweep_id = wandb.sweep(sweep_config, project="anlp_project",
                            entity="selling_bat_yam")
     wandb.agent(sweep_id, wandb_run, count=1000)

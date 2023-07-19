@@ -14,27 +14,10 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 class DataAugmentation:
     def __init__(self):
-        self.add_word_aug = naw.ContextualWordEmbsAug(
-            model_path='bert-base-uncased', action="insert")
 
         self.remove_word_aug = naw.RandomWordAug()
 
         self.replace_word_aug = naw.SynonymAug(aug_src='wordnet')
-
-        # self.back_translation_aug_de = naw.BackTranslationAug(
-        #     from_model_name='facebook/wmt19-en-de',
-        #     to_model_name='facebook/wmt19-de-en',
-        #     device=device
-        # )
-        #
-        # self.back_translation_aug_ru = naw.BackTranslationAug(
-        #     from_model_name='facebook/wmt19-en-ru',
-        #     to_model_name='facebook/wmt19-ru-en',
-        #     device=device
-        # )
-
-    def add_word_contextual(self, overview_text):
-        return self.add_word_aug.augment(overview_text)
 
     def remove_word_randomly(self, overview_text):
         return self.remove_word_aug.augment(overview_text)
@@ -65,18 +48,20 @@ class DataAugmentation:
         del augmentor
         return augmented_data
 
-    def randomly_augment_text(self, text, remove_word_prob, language):
+    def randomly_augment_text(self, text, language):
         # Use back translation
         augmented_text = self.back_translation(text, language)
+        return augmented_text
+
+    def random_remove(self,text, remove_word_prob):
         removed_words = 0
 
         # Remove words exponentially with given probability
         while np.random.rand() < remove_word_prob and removed_words < 10:
-            augmented_text = self.remove_word_randomly(augmented_text)
+            text = self.remove_word_randomly(text)
             removed_words += 1
-            # remove_word_prob = remove_word_prob ** 2
 
-        return augmented_text
+        return text
 
 
 def augment_data(df, seed=42):
