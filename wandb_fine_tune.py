@@ -72,6 +72,7 @@ def main():
     sweep_config = get_config(args.sweep_name,args.augment, args.del_p)
     sweep_id = wandb.sweep(sweep_config, project="anlp_project",
                            entity="selling_bat_yam")
+
     print(sweep_id)
     wandb.agent(sweep_id, wandb_run, count=1000)
     # config = {
