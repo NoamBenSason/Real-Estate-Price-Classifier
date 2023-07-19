@@ -189,6 +189,8 @@ def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
 
         if with_image:
             input_paths = row['images'].split()[:n_images]
+            if len(input_paths) == 0:
+                continue
             out_paths = [os.path.join(image_download_dir, f"{row['zpid']}_{i}.jpg") for i in range(len(input_paths))]
             for in_path, out_path in zip(input_paths, out_paths):
                 download_url((in_path, out_path, image_force_download))
@@ -204,9 +206,9 @@ def augment_dataframe(df: pd.DataFrame, random_state: int = 42):
 
 if __name__ == '__main__':
     fire.Fire(build_df_from_data)
-    # str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
-    # train, test = build_df_from_data()
-    # x = format_dataframe(test, str_format, with_image=True, image_download_dir="validation_images")
-    # a = 1
+    str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
+    train, test = build_df_from_data()
+    x = format_dataframe(train, str_format, with_image=True, image_download_dir="images")
+    a = 1
     # augmented_df = augment_dataframe(train)
     # augmented_df.to_csv("train_data_with_aug.csv", index=False)
