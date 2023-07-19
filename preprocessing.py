@@ -7,7 +7,6 @@ import glob
 import json
 
 import requests
-import wget
 from tqdm import tqdm
 import fire
 from multiprocessing import cpu_count
@@ -162,6 +161,7 @@ def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
                        - street
                        - city
                        - state
+                       - address
                        - overview
                        - price
     :param nan_value: The value to assign to NaN elements
