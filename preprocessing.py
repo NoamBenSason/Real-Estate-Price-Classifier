@@ -206,9 +206,9 @@ def augment_dataframe(df: pd.DataFrame, random_state: int = 42):
 
 if __name__ == '__main__':
     fire.Fire(build_df_from_data)
-    str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
-    train, test = build_df_from_data()
-    x = format_dataframe(train, str_format, with_image=True, image_download_dir="images")
-    a = 1
+    # str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
+    # train, test = build_df_from_data()
+    # x = format_dataframe(test, str_format, with_image=True, image_download_dir="validation_images")
+    # a = 1
     # augmented_df = augment_dataframe(train)
     # augmented_df.to_csv("train_data_with_aug.csv", index=False)
