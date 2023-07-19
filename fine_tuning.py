@@ -86,20 +86,20 @@ def train_model(model, tokenizer, train_dataset, validation_dataset,
                                        'none'],
                                    remove_unused_columns=False
                                    )
-    beta = config['beta'] if config is not None else 0.5
+    # beta = config['beta'] if config is not None else 0.5
     if config is not None:
         train_args.learning_rate = config['learning_rate']
         train_args.num_train_epochs = config['epoch']
         train_args.weight_decay = config['weight_decay']
 
-    trainer = SmoothL1Trainer(model=model,
+    trainer = Trainer(model=model,
                       args=train_args,
                       train_dataset=train_dataset,
                       eval_dataset=validation_dataset,
                       compute_metrics=get_metrics_func(),
-                      tokenizer=tokenizer,
-                      beta=beta
-                      )
+                      tokenizer=tokenizer)
+                      # beta=beta
+
 
     trainer.train()
     return trainer, trainer.evaluate(eval_dataset=validation_dataset)
