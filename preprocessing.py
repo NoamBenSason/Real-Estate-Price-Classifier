@@ -1,9 +1,12 @@
+import os.path
 from typing import Union
 
 import numpy as np
 import pandas as pd
 import glob
 import json
+
+import requests
 import wget
 from tqdm import tqdm
 import fire
@@ -66,9 +69,9 @@ def parse_address(df):
     return new_df
 
 
-def keep_only_first_image(df):
-    df['images'] = df['images'].apply(lambda x: x[0])
-    df = df.rename(columns={'images': 'image'})
+def keep_only_first_n_images(df, n=1):
+    df['images'] = df['images'].apply(lambda x: " ".join([y for y in x if y.endswith('jpg')][:n]))
+    # df = df.rename(columns={'images': 'image'})
     return df
 
 
@@ -100,7 +103,7 @@ def reorder_columns(df):
         'city',
         'state',
         'overview',
-        'image',
+        'images',
         'price'
     ]
     return df[order]
@@ -108,9 +111,11 @@ def reorder_columns(df):
 
 def build_df_from_data(train_path: str = "train_data.csv",
                        val_path: str = "validation_data.csv",
-                       base_data_dir: str = "data"):
+                       base_data_dir: str = "data",
+                       n_images: int = 1):
+
     df = build_raw_df(base_data_dir)
-    df = keep_only_first_image(df)
+    df = keep_only_first_n_images(df, n=n_images)
     df = parse_numeric_cols(df)
     df = parse_address(df)
     df_train, df_test = split_train_test_by_city(df)
@@ -124,8 +129,12 @@ def build_df_from_data(train_path: str = "train_data.csv",
 
 
 def download_url(args):
-    input_path, out_path = args[0], args[1]
-    wget.download(input_path, out_path)
+    input_path, out_path, force_download = args[0], args[1], args[2]
+    if not os.path.isfile(out_path) or force_download:
+        # wget.download(input_path, out_path)
+        img_data = requests.get(input_path).content
+        with open(out_path, 'wb') as handler:
+            handler.write(img_data)
     return out_path
 
 
@@ -135,7 +144,8 @@ def download_parallel(args):
 
 
 def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
-                     nan_value: str = "NaN"):
+                     nan_value: str = "NaN", with_image: bool = False,
+                     image_force_download: bool = False):
     """
     Accepts either a path to dataframe or a dataframe.
     :param df_or_df_path: The dataframe or the path to it
@@ -154,20 +164,35 @@ def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
                        - overview
                        - price
     :param nan_value: The value to assign to NaN elements
+    :param with_image: If true, the returned tuples will have 3 elements: formatted string, local path to
+                       an image of the house, and the price of the sample. Otherwise, the returned tuples
+                       will be as described below.
     :return: A list of tuples of length 2. The first element is the formatted string, the second element is
              the price of the sample, in million dollars.
     """
+
     if isinstance(df_or_df_path, str):
         df_or_df_path = pd.read_csv(df_or_df_path)
     df = df_or_df_path
     out = []
+    if with_image:
+        os.makedirs("images", exist_ok=True)
+
     for _, row in tqdm(list(df.iterrows()),
                        desc="Formatting data"):
         elements_map = dict(row)
         for col in ['bed', 'bath', 'sqft']:
             elements_map[col] = int(elements_map[col]) if not np.isnan(elements_map[col]) else nan_value
         current_str = format_str.format(**elements_map)
-        out.append((current_str, row['price']))
+
+        if with_image:
+            input_paths = row['images'].split()
+            out_paths = [os.path.join('images', f"{row['zpid']}_{i}.jpg") for i in range(len(input_paths))]
+            for in_path, out_path in zip(input_paths, out_paths):
+                download_url((in_path, out_path, image_force_download))
+            out.append((current_str, out_paths, row['price']))
+        else:
+            out.append((current_str, row['price']))
     return out
 
 
@@ -176,10 +201,10 @@ def augment_dataframe(df: pd.DataFrame, random_state: int = 42):
 
 
 if __name__ == '__main__':
-    # train, test = build_df_from_data()
-    # str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
-    # x = format_dataframe(train, str_format)
     fire.Fire(build_df_from_data)
-    # train, test = build_df_from_data()
+    # str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
+    # train, test = build_df_from_data(n_images=2)
+    # x = format_dataframe(train, str_format, with_image=True)
+    # a = 1
     # augmented_df = augment_dataframe(train)
     # augmented_df.to_csv("train_data_with_aug.csv", index=False)
