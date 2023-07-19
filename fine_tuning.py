@@ -140,8 +140,7 @@ def fine_tune_model(model_name, special_tokens, train_dataset,
         train_dataset = train_dataset.map(
             lambda x: tokenize_func(x, tokenizer), batched=True)
     else:
-        train_dataset.set_transform(get_data_augmentor(tokenizer, del_p),
-                                    columns=['bed', 'bath', 'sqft', 'city',
+        train_dataset.set_transform(get_data_augmentor(tokenizer, del_p))
     validation_dataset = validation_dataset.map(
         lambda x: tokenize_func(x, tokenizer), batched=True)
 
