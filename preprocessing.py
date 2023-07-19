@@ -69,8 +69,8 @@ def parse_address(df):
     return new_df
 
 
-def keep_only_first_n_images(df, n=1):
-    df['images'] = df['images'].apply(lambda x: " ".join([y for y in x if y.endswith('jpg')][:n]))
+def parse_images(df):
+    df['images'] = df['images'].apply(lambda x: " ".join([y for y in x if y.endswith('jpg')]))
     # df = df.rename(columns={'images': 'image'})
     return df
 
@@ -111,11 +111,10 @@ def reorder_columns(df):
 
 def build_df_from_data(train_path: str = "train_data.csv",
                        val_path: str = "validation_data.csv",
-                       base_data_dir: str = "data",
-                       n_images: int = 1):
+                       base_data_dir: str = "data"):
 
     df = build_raw_df(base_data_dir)
-    df = keep_only_first_n_images(df, n=n_images)
+    df = parse_images(df)
     df = parse_numeric_cols(df)
     df = parse_address(df)
     df_train, df_test = split_train_test_by_city(df)
@@ -146,6 +145,7 @@ def download_parallel(args):
 def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
                      nan_value: str = "NaN", with_image: bool = False,
                      image_force_download: bool = False,
+                     n_images: int = 1,
                      image_download_dir:str = "images"):
     """
     Accepts either a path to dataframe or a dataframe.
@@ -188,7 +188,7 @@ def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
         current_str = format_str.format(**elements_map)
 
         if with_image:
-            input_paths = row['images'].split()
+            input_paths = row['images'].split()[:n_images]
             out_paths = [os.path.join(image_download_dir, f"{row['zpid']}_{i}.jpg") for i in range(len(input_paths))]
             for in_path, out_path in zip(input_paths, out_paths):
                 download_url((in_path, out_path, image_force_download))
@@ -205,7 +205,7 @@ def augment_dataframe(df: pd.DataFrame, random_state: int = 42):
 if __name__ == '__main__':
     fire.Fire(build_df_from_data)
     # str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
-    # train, test = build_df_from_data(n_images=2)
+    # train, test = build_df_from_data()
     # x = format_dataframe(test, str_format, with_image=True, image_download_dir="validation_images")
     # a = 1
     # augmented_df = augment_dataframe(train)
