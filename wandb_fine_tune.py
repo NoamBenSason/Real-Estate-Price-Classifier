@@ -46,7 +46,8 @@ def get_config(augment, del_p):
 
 
 def wandb_run(config=None):
-    with wandb.init(config=config, name=f"selling_bat_yam_{get_time()}"):
+    with wandb.init(config=config, name=f"selling_bat_yam_{get_time()}",
+                    group="fine_tune"):
         config = wandb.config
         if config['augment']:
             train = convert_data("train_data_with_aug.csv")
@@ -54,27 +55,31 @@ def wandb_run(config=None):
             train = convert_data("train_data.csv")
         val = convert_data("validation_data.csv")
         fine_tune_model(config['model_name'], SPECIAL_TOKENS, train,
-                        val, "no", config, True)
+                        val, "no", config, True, config["augment"],
+                        config["del_p"])
 
 
 def main():
-    args = argparse.ArgumentParser()
-    args.add_argument("--augment", default=False, help="use augmented data")
-    args.add_argument("--del_p", default=0.1, help="probability to delete")
+    # args = argparse.ArgumentParser()
+    # args.add_argument("--augment", default=False, help="use augmented data")
+    # args.add_argument("--del_p", default=0.1, help="probability to delete")
+    #
+    # args = args.parse_args()
+    # sweep_config = get_config(args.augment, args.del_p)
+    # sweep_id = wandb.sweep(sweep_config, project="anlp_project",
+    #                        entity="selling_bat_yam",)
+    # wandb.agent(sweep_id, wandb_run, count=1000)
+    config = {
+        'model_name': 'bert-base-uncased',
+        'epoch': 1,
+        'learning_rate': 0.0001,
+        'weight_decay': 0.0,
+        'beta': 0.0,
+        'augment': False,
+        'del_p': 0.1
+    }
 
-    args = args.parse_args()
-    sweep_config = get_config(args.augment, args.del_p)
-    sweep_id = wandb.sweep(sweep_config, project="anlp_project",
-                           entity="selling_bat_yam")
-    wandb.agent(sweep_id, wandb_run, count=1000)
-    # config = {
-    #     'model_name': 'bert-base-uncased',
-    #     'epoch': 1,
-    #     'learning_rate': 0.0001,
-    #     'weight_decay': 0.0
-    # }
-
-    # wandb_run(config)
+    wandb_run(config)
 
 
 if __name__ == '__main__':
