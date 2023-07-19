@@ -110,9 +110,9 @@ def get_data_augmentor(tokenizer, del_p):
 
     def augmentor(batch):
         batch['overview'] = aug.random_remove(batch['overview'], del_p)
-        batch['description'] = [
+        augmented_batch_description = [
             FINE_TUNNING_FORMAT.format(
-                bed=bed, bath=bath, sqtf=sqft, street=street, city=city, state=state,  overview=overview
+                bed=bed, bath=bath, sqft=sqft, street=street, city=city, state=state,  overview=overview
             )
             for bed, bath, sqft, street, city, state, overview in zip(
                 batch['bed'],
@@ -125,9 +125,10 @@ def get_data_augmentor(tokenizer, del_p):
             )
         ]
 
-        batch['input_ids'] = tokenizer(batch['description'], truncation=True)['input_ids']
-        batch['label'] = batch['price']
-        return batch
+        tokenized_inputs = tokenizer(augmented_batch_description, truncation=True)
+        tokenized_inputs['label'] = batch['price']
+
+        return tokenized_inputs
 
     return augmentor
 
