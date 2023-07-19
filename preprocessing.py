@@ -188,7 +188,9 @@ def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
         current_str = format_str.format(**elements_map)
 
         if with_image:
-            input_paths = row['images'].split()[:n_images] if not np.isnan(row['images']) else []
+            if not isinstance(row['images'], str) and np.isnan(row['images']):
+                continue
+            input_paths = row['images'].split()[:n_images]
             if len(input_paths) == 0:
                 continue
             out_paths = [os.path.join(image_download_dir, f"{row['zpid']}_{i}.jpg") for i in range(len(input_paths))]
