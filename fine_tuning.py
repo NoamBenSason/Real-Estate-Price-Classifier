@@ -12,7 +12,8 @@ import argparse
 
 MODELS = ['bert-base-uncased']  # TODO add other models
 SPECIAL_TOKENS = ['[bd]', '[br]', '[address]', '[overview]', '[sqft]']
-FINE_TUNNING_FORMAT = "[bd]{bed}[br]{bath}[sqft]{sqft}[address]{address}[overview]{overview}"
+FINE_TUNNING_FORMAT = "[bd] {bed} [br] {bath} [sqft] {sqft} [address] {" \
+                      "address} [overview] {overview}"
 
 
 class SmoothL1Trainer(Trainer):
@@ -82,20 +83,21 @@ def train_model(model, tokenizer, train_dataset, validation_dataset,
                                    logging_steps=50,
                                    report_to=["wandb"] if use_wandb else [
                                        'none'],
-                                   remove_unused_columns=False)
+                                   remove_unused_columns=False
+                                   )
     beta = config['beta'] if config is not None else 0.5
     if config is not None:
         train_args.learning_rate = config['learning_rate']
         train_args.num_train_epochs = config['epoch']
         train_args.weight_decay = config['weight_decay']
 
-    trainer = Trainer(model=model,
+    trainer = SmoothL1Trainer(model=model,
                       args=train_args,
                       train_dataset=train_dataset,
                       eval_dataset=validation_dataset,
                       compute_metrics=get_metrics_func(),
                       tokenizer=tokenizer,
-
+                      beta=beta
                       )
 
     trainer.train()
@@ -139,10 +141,12 @@ def fine_tune_model(model_name, special_tokens, train_dataset,
     if not use_augment:
         train_dataset = train_dataset.map(
             lambda x: tokenize_func(x, tokenizer), batched=True)
+        train_dataset = train_dataset.remove_columns(['description'])
     else:
         train_dataset.set_transform(get_data_augmentor(tokenizer, del_p))
     validation_dataset = validation_dataset.map(
         lambda x: tokenize_func(x, tokenizer), batched=True)
+    validation_dataset = validation_dataset.remove_columns(['description'])
 
     trainer, eval_results = train_model(
         model, tokenizer, train_dataset, validation_dataset,
@@ -162,12 +166,13 @@ def convert_data(data):
 
 def main():
     args = argparse.ArgumentParser()
-    args.add_argument("--augment", default=False,type=bool, help="use "
+    args.add_argument("--augment", default=False,type=lambda x: x == "True",help="use "
                                                                  "augmented data")
     args.add_argument("--del_p", default=0.1,type=float, help="probability to "
                                                          "delete")
 
     args = args.parse_args()
+    # print(args)
     if not args.augment:
         train_dataset = convert_data('train_data.csv')
     else:
