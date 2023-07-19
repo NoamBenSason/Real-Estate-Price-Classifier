@@ -3,17 +3,18 @@ import pandas as pd
 # import wandb
 
 from datasets import Dataset
-from preprocessing import format_dataframe
+from preprocessing import format_dataframe, parse_address
 from transformers import TrainingArguments, Trainer, \
     AutoModelForSequenceClassification, AutoTokenizer
 import torch
 from data_augmentation import DataAugmentation
 import argparse
 
+
 MODELS = ['bert-base-uncased']  # TODO add other models
 SPECIAL_TOKENS = ['[bd]', '[br]', '[address]', '[overview]', '[sqft]']
-FINE_TUNNING_FORMAT = "[bd] {bed} [br] {bath} [sqft] {sqft} [address] {" \
-                      "address} [overview] {overview}"
+FINE_TUNNING_FORMAT = "[bd] {bed} [br] {bath} [sqft] {sqft} [address] " \
+                      "{street} {city} {state} [overview] {overview}"
 
 
 class SmoothL1Trainer(Trainer):
@@ -85,20 +86,20 @@ def train_model(model, tokenizer, train_dataset, validation_dataset,
                                        'none'],
                                    remove_unused_columns=False
                                    )
-    beta = config['beta'] if config is not None else 0.5
+    # beta = config['beta'] if config is not None else 0.5
     if config is not None:
         train_args.learning_rate = config['learning_rate']
         train_args.num_train_epochs = config['epoch']
         train_args.weight_decay = config['weight_decay']
 
-    trainer = SmoothL1Trainer(model=model,
+    trainer = Trainer(model=model,
                       args=train_args,
                       train_dataset=train_dataset,
                       eval_dataset=validation_dataset,
                       compute_metrics=get_metrics_func(),
-                      tokenizer=tokenizer,
-                      beta=beta
-                      )
+                      tokenizer=tokenizer)
+                      # beta=beta
+
 
     trainer.train()
     return trainer, trainer.evaluate(eval_dataset=validation_dataset)
@@ -109,16 +110,21 @@ def get_data_augmentor(tokenizer, del_p):
 
     def augmentor(batch):
         batch['overview'] = aug.random_remove(batch['overview'], del_p)
-        batch['description'] = [FINE_TUNNING_FORMAT.format(bed=bed,bath=bath,
-                                                           sqtf=sqft,
-                                                           city=city,overview=overview)
+        batch['description'] = [
+            FINE_TUNNING_FORMAT.format(
+                bed=bed, bath=bath, sqtf=sqft, street=street, city=city, state=state,  overview=overview
+            )
+            for bed, bath, sqft, street, city, state, overview in zip(
+                batch['bed'],
+                batch['bath'],
+                batch['sqft'],
+                batch['street'],
+                batch['city'],
+                batch['state'],
+                batch['overview']
+            )
+        ]
 
-            for bed,bath,sqft,city,overview in zip(
-                                                    batch['bed'],
-                                                    batch['bath'],
-                                                    batch['sqft'],
-                                                    batch['city'],
-                                                    batch['overview'])]
         batch['input_ids'] = tokenizer(batch['description'], truncation=True)['input_ids']
         batch['label'] = batch['price']
         return batch
