@@ -188,7 +188,7 @@ def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
         current_str = format_str.format(**elements_map)
 
         if with_image:
-            input_paths = row['images'].split()[:n_images]
+            input_paths = row['images'].split()[:n_images] if not np.isnan(row['images']) else []
             if len(input_paths) == 0:
                 continue
             out_paths = [os.path.join(image_download_dir, f"{row['zpid']}_{i}.jpg") for i in range(len(input_paths))]
@@ -206,9 +206,10 @@ def augment_dataframe(df: pd.DataFrame, random_state: int = 42):
 
 if __name__ == '__main__':
     fire.Fire(build_df_from_data)
-    # str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
+    str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
     # train, test = build_df_from_data()
-    # x = format_dataframe(test, str_format, with_image=True, image_download_dir="validation_images")
-    # a = 1
+    train = pd.read_csv("train_data.csv")
+    x = format_dataframe(train, str_format, with_image=True, image_download_dir="images_org")
+    a = 1
     # augmented_df = augment_dataframe(train)
     # augmented_df.to_csv("train_data_with_aug.csv", index=False)
