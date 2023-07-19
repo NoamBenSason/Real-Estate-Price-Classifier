@@ -3,17 +3,18 @@ import pandas as pd
 # import wandb
 
 from datasets import Dataset
-from preprocessing import format_dataframe
+from preprocessing import format_dataframe, parse_address
 from transformers import TrainingArguments, Trainer, \
     AutoModelForSequenceClassification, AutoTokenizer
 import torch
 from data_augmentation import DataAugmentation
 import argparse
 
+
 MODELS = ['bert-base-uncased']  # TODO add other models
 SPECIAL_TOKENS = ['[bd]', '[br]', '[address]', '[overview]', '[sqft]']
-FINE_TUNNING_FORMAT = "[bd] {bed} [br] {bath} [sqft] {sqft} [address] {" \
-                      "address} [overview] {overview}"
+FINE_TUNNING_FORMAT = "[bd] {bed} [br] {bath} [sqft] {sqft} [address] " \
+                      "{street} {city} {state} [overview] {overview}"
 
 
 class SmoothL1Trainer(Trainer):
@@ -109,16 +110,21 @@ def get_data_augmentor(tokenizer, del_p):
 
     def augmentor(batch):
         batch['overview'] = aug.random_remove(batch['overview'], del_p)
-        batch['description'] = [FINE_TUNNING_FORMAT.format(bed=bed,bath=bath,
-                                                           sqtf=sqft,
-                                                           city=city,overview=overview)
+        batch['description'] = [
+            FINE_TUNNING_FORMAT.format(
+                bed=bed, bath=bath, sqtf=sqft, street=street, city=city, state=state,  overview=overview
+            )
+            for bed, bath, sqft, street, city, state, overview in zip(
+                batch['bed'],
+                batch['bath'],
+                batch['sqft'],
+                batch['street'],
+                batch['city'],
+                batch['state'],
+                batch['overview']
+            )
+        ]
 
-            for bed,bath,sqft,city,overview in zip(
-                                                    batch['bed'],
-                                                    batch['bath'],
-                                                    batch['sqft'],
-                                                    batch['city'],
-                                                    batch['overview'])]
         batch['input_ids'] = tokenizer(batch['description'], truncation=True)['input_ids']
         batch['label'] = batch['price']
         return batch
