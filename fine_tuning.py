@@ -160,7 +160,10 @@ def fine_tune_model(model_name, special_tokens, train_dataset,
         save_strategy, config, use_wandb
     )
 
-    return trainer.predict(validation_dataset), eval_results
+    output = trainer.predict(validation_dataset), eval_results
+    del model
+    # torch._C._cuda_emptyCache()
+    return output
 
 
 def convert_data(data):
