@@ -51,7 +51,7 @@ def get_config(name, augment, del_p):
 
 def wandb_run(config=None):
     with wandb.init(config=config, name=f"selling_bat_yam_{get_time()}",
-                    group="fine_tune"):
+                    group="fine_tune_aug"):
         config = wandb.config
         if config['augment']:
             train = pd.read_csv('train_data_with_aug.csv')
