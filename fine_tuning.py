@@ -102,6 +102,7 @@ def train_model(model, tokenizer, train_dataset, validation_dataset,
 
 
     trainer.train()
+
     return trainer, trainer.evaluate(eval_dataset=validation_dataset)
 
 
@@ -161,9 +162,10 @@ def fine_tune_model(model_name, special_tokens, train_dataset,
     )
 
     output = trainer.predict(validation_dataset), eval_results
+
     del model
     # torch._C._cuda_emptyCache()
-    return output
+    return output, trainer
 
 
 def convert_data(data):
@@ -176,10 +178,11 @@ def convert_data(data):
 
 def main():
     args = argparse.ArgumentParser()
-    args.add_argument("--augment", default=False,type=lambda x: x == "True",help="use "
+    args.add_argument("--augment", default=False, type=lambda x: x == "True",help="use "
                                                                  "augmented data")
-    args.add_argument("--del_p", default=0.1,type=float, help="probability to "
+    args.add_argument("--del_p", default=0.1, type=float, help="probability to "
                                                          "delete")
+    args.add_argument("--seed", default=3, type=int, help="seed for fine tuning")
 
     args = args.parse_args()
     # print(args)
@@ -194,8 +197,6 @@ def main():
         predictions, eval_results = fine_tune_model(
             model_name, SPECIAL_TOKENS, train_dataset, validation_dataset,
             "no", use_augment=args.augment, del_p=args.del_p)
-
-        print(eval_results)
 
 
 if __name__ == "__main__":
