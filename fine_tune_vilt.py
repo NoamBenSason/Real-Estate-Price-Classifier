@@ -10,12 +10,28 @@ import torch
 import argparse
 
 
-def process_func(row, processor, with_label=True):
-    processed_inputs = processor(row["image"], row["text"], truncation=True)
-    if with_label:
-        processed_inputs["labels"] = row['labels']
+# def transform(batch):
+#
+#
+# def process_func(row, processor, with_label=True):
+#     processed_inputs = processor(row["image"], row["text"], truncation=True)
+#     if with_label:
+#         processed_inputs["labels"] = row['labels']
+#
+#     return processed_inputs
 
-    return processed_inputs
+
+def get_transform_func(processor, with_labels=True):
+    def transform(batch):
+        processed_inputs = processor(batch["image"], batch["text"],
+                                     truncation=True, return_tensors="pt",
+                                     max_length=256, padding=True)
+        if with_labels:
+            processed_inputs["labels"] = batch['labels']
+
+        return processed_inputs
+
+    return transform
 
 
 def get_multi_model_data(file_name, image_download_dir):
@@ -43,9 +59,11 @@ def get_multi_model_data(file_name, image_download_dir):
 def collate_fn(batch):
     return {
         'input_ids': torch.stack(
-            [torch.as_tensor(x['input_ids']) for x in batch]),
+            [x['input_ids'] for x in batch]),
+        'attention_mask': torch.stack([x['attention_mask'] for x in batch]),
+        'token_type_ids': torch.stack([x['token_type_ids'] for x in batch]),
         'pixel_values': torch.stack(
-            [torch.as_tensor(x['pixel_values']) for x in batch]),
+            [x['pixel_values'] for x in batch]),
         'labels': torch.tensor([x['labels'] for x in batch])
     }
 
@@ -58,7 +76,8 @@ def train_vilt_model(model, processor, train_dataset, eval_dataset,
                                    logging_strategy="steps",
                                    logging_steps=50,
                                    report_to=["wandb"] if use_wandb else [
-                                       'none'])
+                                       'none'],
+                                   remove_unused_columns=False)
 
     beta = config['beta'] if config is not None else 0.5
     if config is not None:
@@ -73,6 +92,7 @@ def train_vilt_model(model, processor, train_dataset, eval_dataset,
         eval_dataset=eval_dataset,
         compute_metrics=get_metrics_func(),
         data_collator=collate_fn,
+        tokenizer=processor,
         beta=beta
     )
     trainer.train()
@@ -82,27 +102,30 @@ def train_vilt_model(model, processor, train_dataset, eval_dataset,
 def fine_tune_model(special_tokens, train_dataset, eval_dataset,
                     save_strategy, wandb_config=None, use_wandb=False):
     config = AutoConfig.from_pretrained("dandelin/vilt-b32-mlm", num_labels=1,
-                                        num_images=1)
+                                        num_images=1,
+                                        max_position_embeddings=256)
     processor = ViltProcessor.from_pretrained("dandelin/vilt-b32-mlm",
                                               num_labels=1, config=config,
-                                              num_images=1)
+                                              num_images=1, do_resize=True,
+                                              size={"shortest_edge": 64},
+                                              do_pad=True)
     model = ViltForImagesAndTextClassification.from_pretrained(
         "dandelin/vilt-b32-mlm", ignore_mismatched_sizes=True, config=config)
 
     processor.tokenizer.add_tokens(special_tokens, special_tokens=True)
     model.resize_token_embeddings(len(processor.tokenizer))
 
-    processed_train_dataset = train_dataset.map(
-        lambda x: process_func(x, processor), batched=True)
+    train_dataset.set_transform(get_transform_func(
+        processor))
 
-    processed_eval_dataset = eval_dataset.map(
-        lambda x: process_func(x, processor), batched=True)
+    eval_dataset.set_transform(get_transform_func(
+        processor))
 
     trainer, eval_results = train_vilt_model(
-        model, processor, processed_train_dataset, processed_eval_dataset,
+        model, processor, train_dataset, eval_dataset,
         save_strategy, wandb_config, use_wandb
     )
-    outputs = trainer.predict(processed_eval_dataset), eval_results
+    outputs = trainer.predict(eval_dataset), eval_results
     return outputs, trainer
 
 
