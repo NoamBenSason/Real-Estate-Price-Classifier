@@ -1,34 +1,14 @@
 import evaluate
 import pandas as pd
-# import wandb
 
 from datasets import Dataset
-from preprocessing import format_dataframe, parse_address
-from transformers import TrainingArguments, Trainer, \
+from preprocessing import format_dataframe
+from transformers import TrainingArguments, \
     AutoModelForSequenceClassification, AutoTokenizer
-import torch
 from data_augmentation import DataAugmentation
 import argparse
-
-
-MODELS = ['bert-base-uncased']  # TODO add other models
-SPECIAL_TOKENS = ['[bd]', '[br]', '[address]', '[overview]', '[sqft]']
-FINE_TUNNING_FORMAT = "[bd] {bed} [br] {bath} [sqft] {sqft} [address] " \
-                      "{street} {city} {state} [overview] {overview}"
-
-
-class SmoothL1Trainer(Trainer):
-    def __init__(self, *args, **kwargs):
-        beta = kwargs.pop("beta", 0.5)
-        super().__init__(*args, **kwargs)
-        self.criterion = torch.nn.SmoothL1Loss(beta=beta)
-
-    def compute_loss(self, model, inputs, return_outputs=False):
-        labels = inputs.pop("labels")
-        outputs = model(**inputs)
-        logits = outputs.logits.squeeze(-1)
-        loss = self.criterion(logits, labels.float())
-        return (loss, outputs) if return_outputs else loss
+from fine_tuning_utils import FINE_TUNNING_FORMAT, MODELS, SPECIAL_TOKENS, \
+    SmoothL1Trainer,get_metrics_func
 
 
 def tokenize_func(row, tokenizer, with_label=True):
@@ -37,31 +17,6 @@ def tokenize_func(row, tokenizer, with_label=True):
         tokenized_inputs["label"] = row['label']
 
     return tokenized_inputs
-
-
-def get_metrics_func():
-    """
-    creates a function that can be used to compute metrics
-    :return: a function that calculates metrics
-    """
-    r2 = evaluate.load("r_squared")
-    mse = evaluate.load("mse")
-    mae = evaluate.load("mae")
-
-    def compute_metrics(pred):
-        """
-        computes metrics
-        :param pred: predictions
-        :return: metrics dictionary
-        """
-        labels = pred.label_ids
-        preds = pred.predictions
-        metrics = {'r2': r2.compute(references=labels, predictions=preds)}
-        metrics.update(mse.compute(references=labels, predictions=preds))
-        metrics.update(mae.compute(references=labels, predictions=preds))
-        return metrics
-
-    return compute_metrics
 
 
 def train_model(model, tokenizer, train_dataset, validation_dataset,
@@ -93,13 +48,12 @@ def train_model(model, tokenizer, train_dataset, validation_dataset,
         train_args.weight_decay = config['weight_decay']
 
     trainer = SmoothL1Trainer(model=model,
-                      args=train_args,
-                      train_dataset=train_dataset,
-                      eval_dataset=validation_dataset,
-                      compute_metrics=get_metrics_func(),
-                      tokenizer=tokenizer,
-                      beta=beta)
-
+                              args=train_args,
+                              train_dataset=train_dataset,
+                              eval_dataset=validation_dataset,
+                              compute_metrics=get_metrics_func(),
+                              tokenizer=tokenizer,
+                              beta=beta)
 
     trainer.train()
 
@@ -113,7 +67,8 @@ def get_data_augmentor(tokenizer, del_p):
         batch['overview'] = aug.random_remove(batch['overview'], del_p)
         augmented_batch_description = [
             FINE_TUNNING_FORMAT.format(
-                bed=bed, bath=bath, sqft=sqft, street=street, city=city, state=state,  overview=overview
+                bed=bed, bath=bath, sqft=sqft, street=street, city=city,
+                state=state, overview=overview
             )
             for bed, bath, sqft, street, city, state, overview in zip(
                 batch['bed'],
@@ -126,7 +81,8 @@ def get_data_augmentor(tokenizer, del_p):
             )
         ]
 
-        tokenized_inputs = tokenizer(augmented_batch_description, truncation=True)
+        tokenized_inputs = tokenizer(augmented_batch_description,
+                                     truncation=True)
         tokenized_inputs['label'] = batch['price']
 
         return tokenized_inputs
@@ -178,11 +134,13 @@ def convert_data(data):
 
 def main():
     args = argparse.ArgumentParser()
-    args.add_argument("--augment", default=False, type=lambda x: x == "True",help="use "
-                                                                 "augmented data")
+    args.add_argument("--augment", default=False, type=lambda x: x == "True",
+                      help="use "
+                           "augmented data")
     args.add_argument("--del_p", default=0.1, type=float, help="probability to "
-                                                         "delete")
-    args.add_argument("--seed", default=3, type=int, help="seed for fine tuning")
+                                                               "delete")
+    args.add_argument("--seed", default=3, type=int,
+                      help="seed for fine tuning")
 
     args = args.parse_args()
     # print(args)
@@ -194,12 +152,11 @@ def main():
     validation_dataset = convert_data('validation_data.csv')
 
     for model_name in MODELS:
-        predictions, eval_results = fine_tune_model(
+        predictions, _ = fine_tune_model(
             model_name, SPECIAL_TOKENS, train_dataset, validation_dataset,
             "no", use_augment=args.augment, del_p=args.del_p)
 
         print(f"Model: {model_name}")
-        print(f"Eval results: {eval_results}")
         print(f"Predictions: {predictions}")
 
 
