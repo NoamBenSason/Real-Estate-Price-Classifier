@@ -224,6 +224,34 @@ def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
     return out
 
 
+def get_images_for_df(df_or_df_path: Union[pd.DataFrame, str],
+                      image_download_dir: str = "images",
+                      image_force_download: bool = False,
+                      n_images: int = 1,
+                      ):
+    if isinstance(df_or_df_path, str):
+        df_or_df_path = pd.read_csv(df_or_df_path)
+    df = df_or_df_path
+    images_paths = []
+    for _, row in df.iterrows():
+        if not isinstance(row['images'], str) and np.isnan(row['images']):
+            images_paths.append(list())
+            continue
+        input_paths = row['images'].split()[:n_images]
+        if len(input_paths) == 0:
+            images_paths.append(list())
+            continue
+        out_paths = [os.path.join(image_download_dir, f"{row['zpid']}_{i}.jpg") for i in
+                     range(len(input_paths))]
+        for in_path, out_path in zip(input_paths, out_paths):
+            download_url((in_path, out_path, image_force_download))
+        images_paths.append(out_paths)
+
+    return images_paths
+
+
+
+
 def augment_dataframe(df: pd.DataFrame, random_state: int = 42):
     return augment_data(df, random_state)
 
