@@ -233,7 +233,7 @@ def get_images_for_df(df_or_df_path: Union[pd.DataFrame, str],
         df_or_df_path = pd.read_csv(df_or_df_path)
     df = df_or_df_path
     images_paths = []
-    for _, row in df.iterrows():
+    for _, row in tqdm(df.iterrows()):
         if not isinstance(row['images'], str) and np.isnan(row['images']):
             images_paths.append(list())
             continue
