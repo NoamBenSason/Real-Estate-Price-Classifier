@@ -2,6 +2,7 @@ import argparse
 import json
 import numpy as np
 import pandas as pd
+import torch
 
 from datasets import Dataset
 
@@ -59,12 +60,15 @@ def get_model_avg_score_and_std(scores):
 
 
 def get_models_predictions(models, train_dataset, validation_dataset,
-                           test_dataset, seed, augment=False,
+                           test_dataset_in_dist, test_dataset_out_dist, seed, augment=False,
                            del_p=0):
     prediction_results = {}
 
     for model_name in models:
-        scores = []
+        if torch.cuda.is_available():
+            torch._C._cuda_emptyCache()
+        scores_in_dist = []
+        scores_out_dist = []
         model_config = MODELS_CONFIG[model_name]
         model_config['model_name'] = model_name
         model_config['augment'] = augment
@@ -75,27 +79,39 @@ def get_models_predictions(models, train_dataset, validation_dataset,
                 model_name, SPECIAL_TOKENS, train_dataset, validation_dataset,
                 "no", use_augment=augment, del_p=del_p, config=model_config)
 
-            tokenized_test_dataset = test_dataset.map(
+            tokenized_test_dataset = test_dataset_in_dist.map(
                 lambda x: tokenize_func(x, trainer.tokenizer), batched=True)
             tokenized_test_dataset = tokenized_test_dataset.remove_columns(
                 ['description'])
 
-            scores.append(trainer.evaluate(tokenized_test_dataset,
-                                           metric_key_prefix='test'))
+            scores_in_dist.append(trainer.evaluate(tokenized_test_dataset,
+                                                   metric_key_prefix='test'))
 
-        prediction_results[model_name] = get_model_avg_score_and_std(scores)
+            tokenized_test_dataset = test_dataset_out_dist.map(
+                lambda x: tokenize_func(x, trainer.tokenizer), batched=True)
+            tokenized_test_dataset = tokenized_test_dataset.remove_columns(
+                ['description'])
+
+            scores_out_dist.append(trainer.evaluate(tokenized_test_dataset,
+                                                    metric_key_prefix='test'))
+
+            del trainer
+
+        prediction_results[model_name] = {'in_dist': get_model_avg_score_and_std(scores_in_dist),
+                                          'out_dist': get_model_avg_score_and_std(scores_out_dist)}
 
     return prediction_results
 
 
-def evaluate_models(models, train_dataset, validation_dataset, test_dataset,
+def evaluate_models(models, train_dataset, validation_dataset, test_dataset_in_dist, test_dataset_out_dist,
                     args):
     results = {}
 
     if not args.augment:
         # Run without augmentation
         results['Without Augmentation'] = get_models_predictions(
-            models, train_dataset, validation_dataset, test_dataset, args.seed
+            models, train_dataset, validation_dataset, test_dataset_in_dist, test_dataset_out_dist,
+            args.seed
         )
 
     # Run with augmentation
@@ -103,7 +119,7 @@ def evaluate_models(models, train_dataset, validation_dataset, test_dataset,
         results['With Augmentation'] = {}
         for del_p in args.del_p_list:
             results['With Augmentation'][f'{del_p}'] = get_models_predictions(
-                models, train_dataset, validation_dataset, test_dataset,
+                models, train_dataset, validation_dataset, test_dataset_in_dist, test_dataset_out_dist,
                 args.seed, args.augment, del_p
             )
 
@@ -124,7 +140,7 @@ def main():
     args.add_argument('-p', "--del_p_list", nargs='+',
                       type=float,
                       help="list of probabilities to delete words")
-    args.add_argument("--out_name", default="results", type=str,help="name of output file")
+    args.add_argument("--out_name", default="results", type=str, help="name of output file")
 
     args = args.parse_args()
     # print(args)
@@ -135,20 +151,23 @@ def main():
         train_dataset = Dataset.from_pandas(train_dataset)
 
     validation_dataset = convert_data('validation_data.csv')
-    test_dataset = convert_data('test_data.csv')
+    test_dataset_in_dist = convert_data('test_data_in_dist.csv')
+    test_dataset_out_dist = convert_data('test_data_out_dist.csv')
 
     # results = evaluate_models(
     #     MODELS,
     #     train_dataset.select([i for i in range(1)]),
     #     validation_dataset.select([i for i in range(1)]),
-    #     test_dataset.select([i for i in range(1)]),
+    #     test_dataset_in_dist.select([i for i in range(1)]),
+    #     test_dataset_out_dist.select([i for i in range(1)]),
     #     args
     # )
     results = evaluate_models(
         MODELS,
         train_dataset,
         validation_dataset,
-        test_dataset,
+        test_dataset_in_dist,
+        test_dataset_out_dist,
         args
     )
     outputfile = args.out_name

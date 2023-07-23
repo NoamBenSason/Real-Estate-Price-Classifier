@@ -104,7 +104,6 @@ def reorder_columns(df):
         'state',
         'overview',
         'images',
-        'in_dist',
         'price'
     ]
     return df[order]
@@ -117,7 +116,6 @@ def build_df_from_data(train_path: str = "train_data.csv",
     df = parse_images(df)
     df = parse_numeric_cols(df)
     df = parse_address(df)
-    df['in_dist'] = True
     df_train, df_test = split_train_test_by_city(df)
 
     df_train = reorder_columns(df_train)
@@ -128,7 +126,8 @@ def build_df_from_data(train_path: str = "train_data.csv",
     return df_train, df_test
 
 
-def build_df_test_data(test_path: str = "test_data.csv",
+def build_df_test_data(test_path_in_dist: str = "test_data_in_dist.csv",
+                       test_path_out_dist: str = "test_data_out_dist.csv",
                        base_data_dir: str = "test_data"):
     out_of_distribution_folders = ['Charlotte', 'Jacksnoville', 'New_York', 'Philadelphia']
     df = build_raw_df(base_data_dir)
@@ -137,8 +136,15 @@ def build_df_test_data(test_path: str = "test_data.csv",
     df = parse_address(df)
     df['in_dist'] = df['path'].apply(lambda x: not any([city in x for city in out_of_distribution_folders]))
 
-    df = reorder_columns(df)
-    df.to_csv(test_path, index=False)
+    df_in_dist = df[df['in_dist']]
+    df_in_dist = df_in_dist.drop(columns='in_dist')
+    df_in_dist = reorder_columns(df_in_dist)
+    df_in_dist.to_csv(test_path_in_dist, index=False)
+
+    df_out_dist = df[~df['in_dist']]
+    df_out_dist = df_out_dist.drop(columns='in_dist')
+    df_out_dist = reorder_columns(df_out_dist)
+    df_out_dist.to_csv(test_path_out_dist, index=False)
 
 
 def download_url(args):
