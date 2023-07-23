@@ -43,12 +43,12 @@ MODELS_CONFIG = {
 
 def get_model_avg_score_and_std(scores):
     results = {
-        'Average Score': {
+        'avg': {
             'r2_score': np.average([i['test_r2'] for i in scores]),
             'mean_squared_error': np.average([i['test_mse'] for i in scores]),
             'mean_absolute_error': np.average([i['test_mae'] for i in scores]),
         },
-        'STD': {
+        'std': {
             'r2_score': np.std([i['test_r2'] for i in scores]),
             'mean_squared_error': np.std([i['test_mse'] for i in scores]),
             'mean_absolute_error': np.std([i['test_mae'] for i in scores]),
@@ -111,7 +111,7 @@ def evaluate_models(models, train_dataset, validation_dataset, test_dataset,
 
 
 def write_results_to_file(results, file_name):
-    with open(f'results/{file_name}.txt', 'w') as f:
+    with open(f'results/{file_name}', 'w') as f:
         f.write(json.dumps(results))
 
 
@@ -124,6 +124,7 @@ def main():
     args.add_argument('-p', "--del_p_list", nargs='+',
                       type=float,
                       help="list of probabilities to delete words")
+    args.add_argument("--out_name", default="results", type=str,help="name of output file")
 
     args = args.parse_args()
     # print(args)
@@ -136,15 +137,15 @@ def main():
     validation_dataset = convert_data('validation_data.csv')
 
     # TODO: for test
-    # results = evaluate_models(
-    #     MODELS,
-    #     train_dataset.select([i for i in range(1)]),
-    #     validation_dataset.select([i for i in range(1)]),
-    #     validation_dataset.select([i for i in range(1)]),
-    #     args
-    # )
-    #
-    # print(results)
+    results = evaluate_models(
+        MODELS,
+        train_dataset.select([i for i in range(1)]),
+        validation_dataset.select([i for i in range(1)]),
+        validation_dataset.select([i for i in range(1)]),
+        args
+    )
+    outputfile = args.out_name
+    write_results_to_file(results, outputfile)
 
 
 if __name__ == "__main__":

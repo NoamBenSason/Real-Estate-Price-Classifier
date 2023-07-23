@@ -1,0 +1,137 @@
+from transformers import ViltProcessor, ViltForImagesAndTextClassification, \
+    AutoConfig
+from PIL import Image
+import datasets
+from transformers import TrainingArguments
+from preprocessing import format_dataframe
+from fine_tuning_utils import SmoothL1Trainer, FINE_TUNNING_FORMAT, \
+    get_metrics_func, SPECIAL_TOKENS
+import torch
+import argparse
+
+
+def process_func(row, processor, with_label=True):
+    processed_inputs = processor(row["image"], row["text"], truncation=True)
+    if with_label:
+        processed_inputs["labels"] = row['labels']
+
+    return processed_inputs
+
+
+def get_multi_model_data(file_name, image_download_dir):
+    # Uncomment if there are not csv files saved
+    # df_train, df_test = build_df_from_data()
+
+    tuples = format_dataframe(file_name, FINE_TUNNING_FORMAT, with_image=True,
+                              image_download_dir=image_download_dir)
+
+    texts = [item[0] for item in tuples]
+    images = [item[1] for item in tuples]
+    prices = [item[2] for item in tuples]
+
+    # images_pil = [datasets.Image(im[0]) for im in images]
+
+    images_pil = [Image.open(im[0]) for im in images]  # Takes time
+
+    dict_data = {"text": texts, "image": images_pil, "labels": prices}
+
+    dataset = datasets.Dataset.from_dict(dict_data)
+
+    return dataset
+
+
+def collate_fn(batch):
+    return {
+        'input_ids': torch.stack(
+            [torch.as_tensor(x['input_ids']) for x in batch]),
+        'pixel_values': torch.stack(
+            [torch.as_tensor(x['pixel_values']) for x in batch]),
+        'labels': torch.tensor([x['labels'] for x in batch])
+    }
+
+
+def train_vilt_model(model, processor, train_dataset, eval_dataset,
+                     save_strategy, config=None, use_wandb=False):
+    train_args = TrainingArguments(output_dir="./results",
+                                   save_strategy=save_strategy,
+                                   evaluation_strategy="epoch",
+                                   logging_strategy="steps",
+                                   logging_steps=50,
+                                   report_to=["wandb"] if use_wandb else [
+                                       'none'])
+
+    beta = config['beta'] if config is not None else 0.5
+    if config is not None:
+        train_args.learning_rate = config['learning_rate']
+        train_args.num_train_epochs = config['epoch']
+        train_args.weight_decay = config['weight_decay']
+
+    trainer = SmoothL1Trainer(
+        model=model,
+        args=train_args,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        compute_metrics=get_metrics_func(),
+        data_collator=collate_fn,
+        beta=beta
+    )
+    trainer.train()
+    return trainer, trainer.evaluate(eval_dataset=eval_dataset)
+
+
+def fine_tune_model(special_tokens, train_dataset, eval_dataset,
+                    save_strategy, wandb_config=None, use_wandb=False):
+    config = AutoConfig.from_pretrained("dandelin/vilt-b32-mlm", num_labels=1,
+                                        num_images=1)
+    processor = ViltProcessor.from_pretrained("dandelin/vilt-b32-mlm",
+                                              num_labels=1, config=config,
+                                              num_images=1)
+    model = ViltForImagesAndTextClassification.from_pretrained(
+        "dandelin/vilt-b32-mlm", ignore_mismatched_sizes=True, config=config)
+
+    processor.tokenizer.add_tokens(special_tokens, special_tokens=True)
+    model.resize_token_embeddings(len(processor.tokenizer))
+
+    processed_train_dataset = train_dataset.map(
+        lambda x: process_func(x, processor), batched=True)
+
+    processed_eval_dataset = eval_dataset.map(
+        lambda x: process_func(x, processor), batched=True)
+
+    trainer, eval_results = train_vilt_model(
+        model, processor, processed_train_dataset, processed_eval_dataset,
+        save_strategy, wandb_config, use_wandb
+    )
+    outputs = trainer.predict(processed_eval_dataset), eval_results
+    return outputs, trainer
+
+
+def main():
+    args = argparse.ArgumentParser()
+    args.add_argument("--augment", default=False, type=lambda x: x == "True",
+                      help="use "
+                           "augmented data")
+    args.add_argument("--del_p", default=0.1, type=float, help="probability to "
+                                                               "delete")
+    args.add_argument("--seed", default=3, type=int,
+                      help="seed for fine tuning")
+
+    args = args.parse_args()
+    # print(args)
+    # if not args.augment:
+    train_dataset = get_multi_model_data("train_data.csv", "images")
+    # else:
+    #     train_dataset = pd.read_csv('train_data_with_aug.csv')
+    #     train_dataset = Dataset.from_pandas(train_dataset)
+    validation_dataset = get_multi_model_data("validation_data.csv",
+                                              "validation_images")
+
+    predictions, trainer = fine_tune_model(SPECIAL_TOKENS, train_dataset,
+                                           validation_dataset, "no")
+
+    # print(f"Eval results: {eval_results}")
+    print(f"Predictions: {predictions}")
+
+
+if __name__ == '__main__':
+    main()
