@@ -67,15 +67,7 @@ def get_models_predictions(models, train_dataset, validation_dataset,
                            del_p=0):
     prediction_results = {}
 
-    test_dataset_in_dist = test_dataset_in_dist.map(
-        lambda x: tokenize_func(x, trainer.tokenizer), batched=True)
-    test_dataset_in_dist = test_dataset_in_dist.remove_columns(
-        ['description'])
 
-    test_dataset_out_dist = test_dataset_out_dist.map(
-        lambda x: tokenize_func(x, trainer.tokenizer), batched=True)
-    test_dataset_out_dist = test_dataset_out_dist.remove_columns(
-        ['description'])
 
     for model_name in models:
         # if torch.cuda.is_available():
@@ -91,6 +83,16 @@ def get_models_predictions(models, train_dataset, validation_dataset,
             output, trainer = fine_tune_model(
                 model_name, SPECIAL_TOKENS, train_dataset, validation_dataset,
                 "no", use_augment=augment, del_p=del_p, config=model_config)
+
+            test_dataset_in_dist = test_dataset_in_dist.map(
+                lambda x: tokenize_func(x, trainer.tokenizer), batched=True)
+            test_dataset_in_dist = test_dataset_in_dist.remove_columns(
+                ['description'])
+
+            test_dataset_out_dist = test_dataset_out_dist.map(
+                lambda x: tokenize_func(x, trainer.tokenizer), batched=True)
+            test_dataset_out_dist = test_dataset_out_dist.remove_columns(
+                ['description'])
 
             scores_in_dist.append(trainer.evaluate(test_dataset_in_dist,
                                                    metric_key_prefix='test'))
