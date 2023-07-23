@@ -20,6 +20,7 @@ def txt_file_to_series(txt_file_path):
     with open(txt_file_path, 'r', encoding='utf-8') as f:
         house_data = json.load(f)
     house_data['address'] = house_data['address'].replace(u'\xa0', u' ')
+    house_data['path'] = txt_file_path
     series = pd.Series(house_data)
     return series
 
@@ -103,6 +104,7 @@ def reorder_columns(df):
         'state',
         'overview',
         'images',
+        'in_dist',
         'price'
     ]
     return df[order]
@@ -111,11 +113,11 @@ def reorder_columns(df):
 def build_df_from_data(train_path: str = "train_data.csv",
                        val_path: str = "validation_data.csv",
                        base_data_dir: str = "data"):
-
     df = build_raw_df(base_data_dir)
     df = parse_images(df)
     df = parse_numeric_cols(df)
     df = parse_address(df)
+    df['in_dist'] = True
     df_train, df_test = split_train_test_by_city(df)
 
     df_train = reorder_columns(df_train)
@@ -124,6 +126,19 @@ def build_df_from_data(train_path: str = "train_data.csv",
     df_train.to_csv(train_path, index=False)
     df_test.to_csv(val_path, index=False)
     return df_train, df_test
+
+
+def build_df_test_data(test_path: str = "test_data.csv",
+                       base_data_dir: str = "test_data"):
+    out_of_distribution_folders = ['Charlotte', 'Jacksnoville', 'New_York', 'Philadelphia']
+    df = build_raw_df(base_data_dir)
+    df = parse_images(df)
+    df = parse_numeric_cols(df)
+    df = parse_address(df)
+    df['in_dist'] = df['path'].apply(lambda x: not any([city in x for city in out_of_distribution_folders]))
+
+    df = reorder_columns(df)
+    df.to_csv(test_path, index=False)
 
 
 def download_url(args):
@@ -145,7 +160,7 @@ def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
                      nan_value: str = "NaN", with_image: bool = False,
                      image_force_download: bool = False,
                      n_images: int = 1,
-                     image_download_dir:str = "images"):
+                     image_download_dir: str = "images"):
     """
     Accepts either a path to dataframe or a dataframe.
     :param df_or_df_path: The dataframe or the path to it
@@ -193,7 +208,8 @@ def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
             input_paths = row['images'].split()[:n_images]
             if len(input_paths) == 0:
                 continue
-            out_paths = [os.path.join(image_download_dir, f"{row['zpid']}_{i}.jpg") for i in range(len(input_paths))]
+            out_paths = [os.path.join(image_download_dir, f"{row['zpid']}_{i}.jpg") for i in
+                         range(len(input_paths))]
             for in_path, out_path in zip(input_paths, out_paths):
                 download_url((in_path, out_path, image_force_download))
             out.append((current_str, out_paths, row['price']))
@@ -207,11 +223,13 @@ def augment_dataframe(df: pd.DataFrame, random_state: int = 42):
 
 
 if __name__ == '__main__':
-    fire.Fire(build_df_from_data)
-    str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
+    # fire.Fire(build_df_from_data)
+    build_df_from_data()
+    build_df_test_data()
+    # str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
     # train, test = build_df_from_data()
-    train = pd.read_csv("train_data.csv")
-    x = format_dataframe(train, str_format, with_image=True, image_download_dir="images_org")
-    a = 1
+    # train = pd.read_csv("train_data.csv")
+    # x = format_dataframe(train, str_format, with_image=True, image_download_dir="images_org")
+    # a = 1
     # augmented_df = augment_dataframe(train)
     # augmented_df.to_csv("train_data_with_aug.csv", index=False)

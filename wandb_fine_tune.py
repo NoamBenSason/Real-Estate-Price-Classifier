@@ -1,4 +1,5 @@
 import pandas as pd
+import torch
 from datasets import Dataset
 
 import wandb
@@ -21,10 +22,15 @@ def get_config(name, augment, del_p):
                     'metric': {'name': 'eval/mse', 'goal': 'minimize'}}
 
     param_dict = {
-        'model_name': {'values': ['bert-base-uncased', 'bert-large-uncased',
-                                  'roberta-base', 'roberta-large',
-                                  'google/electra-base-generator',
-                                  'google/electra-large-generator']},
+        'model_name': {'values': [
+            'bert-base-uncased',
+            # 'bert-large-uncased',
+            'roberta-base',
+            # 'roberta-large',
+            'google/electra-base-generator',
+            # 'google/electra-large-generator'
+        ]},
+
         'epoch': {'value': 15},
         'learning_rate': {
             'distribution': 'log_uniform_values',
@@ -59,6 +65,8 @@ def wandb_run(config=None):
         else:
             train = convert_data("train_data.csv")
         val = convert_data("validation_data.csv")
+        if torch.cuda.is_available():
+            torch._C._cuda_emptyCache()
         fine_tune_model(config['model_name'], SPECIAL_TOKENS, train,
                         val, "no", config, True, config["augment"],
                         config["del_p"])
@@ -66,14 +74,14 @@ def wandb_run(config=None):
 
 def main():
     args = argparse.ArgumentParser()
-    args.add_argument("--sweep_name",type=str)
+    args.add_argument("--sweep_name", type=str)
     args.add_argument("--augment", default=False, type=lambda x: x == "True",
                       help="use augmented data")
     args.add_argument("--del_p", default=0.1, type=float, help="probability to "
                                                                "delete")
 
     args = args.parse_args()
-    sweep_config = get_config(args.sweep_name,args.augment, args.del_p)
+    sweep_config = get_config(args.sweep_name, args.augment, args.del_p)
     sweep_id = wandb.sweep(sweep_config, project="anlp_project",
                            entity="selling_bat_yam")
 
