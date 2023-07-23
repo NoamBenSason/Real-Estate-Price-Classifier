@@ -67,9 +67,19 @@ def get_models_predictions(models, train_dataset, validation_dataset,
                            del_p=0):
     prediction_results = {}
 
+    test_dataset_in_dist = test_dataset_in_dist.map(
+        lambda x: tokenize_func(x, trainer.tokenizer), batched=True)
+    test_dataset_in_dist = test_dataset_in_dist.remove_columns(
+        ['description'])
+
+    test_dataset_out_dist = test_dataset_out_dist.map(
+        lambda x: tokenize_func(x, trainer.tokenizer), batched=True)
+    test_dataset_out_dist = test_dataset_out_dist.remove_columns(
+        ['description'])
+
     for model_name in models:
-        if torch.cuda.is_available():
-            torch._C._cuda_emptyCache()
+        # if torch.cuda.is_available():
+        #     torch._C._cuda_emptyCache()
         scores_in_dist = []
         scores_out_dist = []
         model_config = MODELS_CONFIG[model_name]
@@ -82,23 +92,13 @@ def get_models_predictions(models, train_dataset, validation_dataset,
                 model_name, SPECIAL_TOKENS, train_dataset, validation_dataset,
                 "no", use_augment=augment, del_p=del_p, config=model_config)
 
-            tokenized_test_dataset = test_dataset_in_dist.map(
-                lambda x: tokenize_func(x, trainer.tokenizer), batched=True)
-            tokenized_test_dataset = tokenized_test_dataset.remove_columns(
-                ['description'])
-
-            scores_in_dist.append(trainer.evaluate(tokenized_test_dataset,
+            scores_in_dist.append(trainer.evaluate(test_dataset_in_dist,
                                                    metric_key_prefix='test'))
 
-            tokenized_test_dataset = test_dataset_out_dist.map(
-                lambda x: tokenize_func(x, trainer.tokenizer), batched=True)
-            tokenized_test_dataset = tokenized_test_dataset.remove_columns(
-                ['description'])
-
-            scores_out_dist.append(trainer.evaluate(tokenized_test_dataset,
+            scores_out_dist.append(trainer.evaluate(test_dataset_out_dist,
                                                     metric_key_prefix='test'))
 
-            del trainer
+            # del trainer
 
         prediction_results[model_name] = {'in_dist': get_model_avg_score_and_std(scores_in_dist),
                                           'out_dist': get_model_avg_score_and_std(scores_out_dist)}
