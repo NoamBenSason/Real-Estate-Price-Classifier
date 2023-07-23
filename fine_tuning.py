@@ -24,7 +24,7 @@ class SmoothL1Trainer(Trainer):
         self.criterion = torch.nn.SmoothL1Loss(beta=beta)
 
     def compute_loss(self, model, inputs, return_outputs=False):
-        labels = inputs.get("labels")
+        labels = inputs.pop("labels")
         outputs = model(**inputs)
         logits = outputs.logits.squeeze(-1)
         loss = self.criterion(logits, labels.float())
@@ -86,19 +86,19 @@ def train_model(model, tokenizer, train_dataset, validation_dataset,
                                        'none'],
                                    remove_unused_columns=False
                                    )
-    # beta = config['beta'] if config is not None else 0.5
+    beta = config['beta'] if config is not None else 0.5
     if config is not None:
         train_args.learning_rate = config['learning_rate']
         train_args.num_train_epochs = config['epoch']
         train_args.weight_decay = config['weight_decay']
 
-    trainer = Trainer(model=model,
+    trainer = SmoothL1Trainer(model=model,
                       args=train_args,
                       train_dataset=train_dataset,
                       eval_dataset=validation_dataset,
                       compute_metrics=get_metrics_func(),
-                      tokenizer=tokenizer)
-                      # beta=beta
+                      tokenizer=tokenizer,
+                      beta=beta)
 
 
     trainer.train()
@@ -197,6 +197,10 @@ def main():
         predictions, eval_results = fine_tune_model(
             model_name, SPECIAL_TOKENS, train_dataset, validation_dataset,
             "no", use_augment=args.augment, del_p=args.del_p)
+
+        print(f"Model: {model_name}")
+        print(f"Eval results: {eval_results}")
+        print(f"Predictions: {predictions}")
 
 
 if __name__ == "__main__":
