@@ -8,7 +8,7 @@ from datasets import Dataset
 from fine_tuning import fine_tune_model, tokenize_func, convert_data
 
 SPECIAL_TOKENS = ['[bd]', '[br]', '[address]', '[overview]', '[sqft]']
-MODELS = ['bert-base-uncased']
+MODELS = ['bert-base-uncased', 'roberta-base', 'google/electra-base-generator']
 
 ROBERTA_CONFIG = {
     'epoch': 15,
@@ -135,13 +135,20 @@ def main():
         train_dataset = Dataset.from_pandas(train_dataset)
 
     validation_dataset = convert_data('validation_data.csv')
+    test_dataset = convert_data('test_data.csv')
 
-    # TODO: for test
+    # results = evaluate_models(
+    #     MODELS,
+    #     train_dataset.select([i for i in range(1)]),
+    #     validation_dataset.select([i for i in range(1)]),
+    #     test_dataset.select([i for i in range(1)]),
+    #     args
+    # )
     results = evaluate_models(
         MODELS,
-        train_dataset.select([i for i in range(1)]),
-        validation_dataset.select([i for i in range(1)]),
-        validation_dataset.select([i for i in range(1)]),
+        train_dataset,
+        validation_dataset,
+        test_dataset,
         args
     )
     outputfile = args.out_name
