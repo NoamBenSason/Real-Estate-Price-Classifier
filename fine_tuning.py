@@ -20,7 +20,7 @@ def tokenize_func(row, tokenizer, with_label=True):
 
 
 def train_model(model, tokenizer, train_dataset, validation_dataset,
-                save_strategy, config=None, use_wandb=False):
+                save_strategy, config=None, use_wandb=False,seed=42):
     """
     trains a model for a single run
     :param model: model to train
@@ -39,7 +39,8 @@ def train_model(model, tokenizer, train_dataset, validation_dataset,
                                    logging_steps=50,
                                    report_to=["wandb"] if use_wandb else [
                                        'none'],
-                                   remove_unused_columns=False
+                                   remove_unused_columns=False,
+                                   seed=seed
                                    )
     beta = config['beta'] if config is not None else 0.5
     if config is not None:
@@ -92,7 +93,8 @@ def get_data_augmentor(tokenizer, del_p):
 
 def fine_tune_model(model_name, special_tokens, train_dataset,
                     validation_dataset, save_strategy,
-                    config=None, use_wandb=False, use_augment=False, del_p=0.1):
+                    config=None, use_wandb=False, use_augment=False,
+                    del_p=0.1,seed=42):
     model = AutoModelForSequenceClassification.from_pretrained(model_name,
                                                                num_labels=1)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -114,7 +116,7 @@ def fine_tune_model(model_name, special_tokens, train_dataset,
 
     trainer, eval_results = train_model(
         model, tokenizer, train_dataset, validation_dataset,
-        save_strategy, config, use_wandb
+        save_strategy, config, use_wandb,seed=seed
     )
 
     output = trainer.predict(validation_dataset), eval_results

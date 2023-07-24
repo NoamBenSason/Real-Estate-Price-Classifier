@@ -82,7 +82,8 @@ def get_models_predictions(models, train_dataset, validation_dataset,
         for i in range(seed):
             output, trainer = fine_tune_model(
                 model_name, SPECIAL_TOKENS, train_dataset, validation_dataset,
-                "no", use_augment=augment, del_p=del_p, config=model_config)
+                "no", use_augment=augment, del_p=del_p, config=model_config,
+                seed=i)
 
             pros_test_in_dist = test_dataset_in_dist.map(
                 lambda x: tokenize_func(x, trainer.tokenizer), batched=True)
