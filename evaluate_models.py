@@ -16,7 +16,7 @@ MODELS = ['bert-base-uncased', 'roberta-base', 'google/electra-base-generator',
 
 ROBERTA_CONFIG = {
     'epoch': 15,
-    'learning_rate': 0.0001,
+    'learning_rate': 0.0000727448275741791,
     'weight_decay': 0.1,
     'beta': 0.5,
 }
