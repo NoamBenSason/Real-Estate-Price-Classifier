@@ -9,9 +9,9 @@ from datasets import Dataset
 from fine_tuning import fine_tune_model, tokenize_func, convert_data
 
 SPECIAL_TOKENS = ['[bd]', '[br]', '[address]', '[overview]', '[sqft]']
-MODELS = ['bert-base-uncased', 'roberta-base', 'google/electra-base-generator',
-          'bert-large-uncased', 'roberta-large',
-          'google/electra-large-generator'
+MODELS = ['bert-base-uncased', 'roberta-base', 'google/electra-base-generator'
+          # 'bert-large-uncased', 'roberta-large',
+          # 'google/electra-large-generator'
           ]
 
 ROBERTA_CONFIG = {
