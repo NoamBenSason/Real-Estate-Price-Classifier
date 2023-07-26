@@ -36,7 +36,7 @@ def get_transform_func(processor, with_labels=True):
 
 def get_multi_model_data(file_name, image_download_dir):
     # Uncomment if there are not csv files saved
-    # df_train, df_test = build_df_from_data()
+    # df_train, df_test = build_df_data()
 
     tuples = format_dataframe(file_name, FINE_TUNNING_FORMAT, with_image=True,
                               image_download_dir=image_download_dir)

@@ -27,8 +27,9 @@ def txt_file_to_series(txt_file_path):
 
 def build_raw_df(base_data_dir="data"):
     rows = []
-    for path in tqdm(list(glob.glob(f"{base_data_dir}/**/*.txt", recursive=True)),
-                     desc="Loading data from txt files"):
+    for path in tqdm(
+            list(glob.glob(f"{base_data_dir}/**/*.txt", recursive=True)),
+            desc="Loading data from txt files"):
         rows.append(txt_file_to_series(path))
     df = pd.DataFrame(rows)
     return df
@@ -36,7 +37,9 @@ def build_raw_df(base_data_dir="data"):
 
 def parse_numeric_cols(df):
     for col in ['bed', 'bath', 'sqft']:
-        df[col] = df[col].apply(lambda x: np.nan if x == '--' or not bool(x) else int(x.replace(",", "")))
+        df[col] = df[col].apply(
+            lambda x: np.nan if x == '--' or not bool(x) else int(
+                x.replace(",", "")))
     df['price'] = df['price'].apply(lambda x: np.nan if x == '--' or not bool(x)
     else int(x.replace(",", "").replace("$", "")) / 1e6)
     return df
@@ -63,19 +66,22 @@ def parse_address(df):
         return street, city, state
 
     new_df = df.copy()
-    split_data = pd.DataFrame(list(df.apply(parse_row, axis=1)), columns=['street', 'city', 'state'])
+    split_data = pd.DataFrame(list(df.apply(parse_row, axis=1)),
+                              columns=['street', 'city', 'state'])
     new_df = new_df.drop(columns=['address'])
     new_df = pd.concat([new_df, split_data], axis=1)
     return new_df
 
 
 def parse_images(df):
-    df['images'] = df['images'].apply(lambda x: " ".join([y for y in x if y.endswith('jpg')]))
+    df['images'] = df['images'].apply(
+        lambda x: " ".join([y for y in x if y.endswith('jpg')]))
     # df = df.rename(columns={'images': 'image'})
     return df
 
 
-def split_train_test_by_city(df, random_state: int = 42, train_size: float = 0.85):
+def split_train_test_by_city(df, random_state: int = 42,
+                             train_size: float = 0.85):
     train_sets = []
     test_sets = []
     for city in df['city'].unique():
@@ -109,32 +115,39 @@ def reorder_columns(df):
     return df[order]
 
 
-def build_df_from_data(train_path: str = "train_data.csv",
-                       val_path: str = "validation_data.csv",
-                       base_data_dir: str = "data"):
+def build_df_data(train_path: str = "train_data.csv",
+                  val_path: str = "validation_data.csv",
+                  base_data_dir: str = "data", split = True):
     df = build_raw_df(base_data_dir)
     df = parse_images(df)
     df = parse_numeric_cols(df)
     df = parse_address(df)
-    df_train, df_test = split_train_test_by_city(df)
+    if split:
+        df_train, df_test = split_train_test_by_city(df)
 
-    df_train = reorder_columns(df_train)
-    df_test = reorder_columns(df_test)
+        df_train = reorder_columns(df_train)
+        df_test = reorder_columns(df_test)
 
-    df_train.to_csv(train_path, index=False)
-    df_test.to_csv(val_path, index=False)
-    return df_train, df_test
+        df_train.to_csv(train_path, index=False)
+        df_test.to_csv(val_path, index=False)
+        return df_train, df_test
+    else:
+        df = reorder_columns(df)
+        df.to_csv(train_path, index=False)
+        return df
 
 
 def build_df_test_data(test_path_in_dist: str = "test_data_in_dist.csv",
                        test_path_out_dist: str = "test_data_out_dist.csv",
                        base_data_dir: str = "test_data"):
-    out_of_distribution_folders = ['Charlotte', 'Jacksnoville', 'New_York', 'Philadelphia']
+    out_of_distribution_folders = ['Charlotte', 'Jacksnoville', 'New_York',
+                                   'Philadelphia']
     df = build_raw_df(base_data_dir)
     df = parse_images(df)
     df = parse_numeric_cols(df)
     df = parse_address(df)
-    df['in_dist'] = df['path'].apply(lambda x: not any([city in x for city in out_of_distribution_folders]))
+    df['in_dist'] = df['path'].apply(
+        lambda x: not any([city in x for city in out_of_distribution_folders]))
 
     df_in_dist = df[df['in_dist']]
     df_in_dist = df_in_dist.drop(columns='in_dist')
@@ -204,8 +217,10 @@ def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
                        desc="Formatting data"):
         elements_map = dict(row)
         for col in ['bed', 'bath', 'sqft']:
-            elements_map[col] = int(elements_map[col]) if not np.isnan(elements_map[col]) else nan_value
-        elements_map['address'] = f"{row['street']}, {row['city']},{row['state']}"
+            elements_map[col] = int(elements_map[col]) if not np.isnan(
+                elements_map[col]) else nan_value
+        elements_map[
+            'address'] = f"{row['street']}, {row['city']},{row['state']}"
         current_str = format_str.format(**elements_map)
 
         if with_image:
@@ -214,8 +229,10 @@ def format_dataframe(df_or_df_path: Union[pd.DataFrame, str], format_str: str,
             input_paths = row['images'].split()[:n_images]
             if len(input_paths) == 0:
                 continue
-            out_paths = [os.path.join(image_download_dir, f"{row['zpid']}_{i}.jpg") for i in
-                         range(len(input_paths))]
+            out_paths = [
+                os.path.join(image_download_dir, f"{row['zpid']}_{i}.jpg") for i
+                in
+                range(len(input_paths))]
             for in_path, out_path in zip(input_paths, out_paths):
                 download_url((in_path, out_path, image_force_download))
             out.append((current_str, out_paths, row['price']))
@@ -241,7 +258,8 @@ def get_images_for_df(df_or_df_path: Union[pd.DataFrame, str],
         if len(input_paths) == 0:
             images_paths.append(list())
             continue
-        out_paths = [os.path.join(image_download_dir, f"{row['zpid']}_{i}.jpg") for i in
+        out_paths = [os.path.join(image_download_dir, f"{row['zpid']}_{i}.jpg")
+                     for i in
                      range(len(input_paths))]
         for in_path, out_path in zip(input_paths, out_paths):
             download_url((in_path, out_path, image_force_download))
@@ -250,18 +268,17 @@ def get_images_for_df(df_or_df_path: Union[pd.DataFrame, str],
     return images_paths
 
 
-
-
 def augment_dataframe(df: pd.DataFrame, random_state: int = 42):
     return augment_data(df, random_state)
 
 
 if __name__ == '__main__':
-    # fire.Fire(build_df_from_data)
-    build_df_from_data()
-    build_df_test_data()
+    # fire.Fire(build_df_data)
+    build_df_data(train_path="west_coast_data.csv",split=False)
+    # build_df_data()
+    # build_df_test_data()
     # str_format = "[bd]{bed}[br]{bath}[QF]{sqft}[OV]{overview}[SEP]The Price of the apartment is [MASK] million US dollars"
-    # train, test = build_df_from_data()
+    # train, test = build_df_data()
     # train = pd.read_csv("train_data.csv")
     # x = format_dataframe(train, str_format, with_image=True, image_download_dir="images_org")
     # a = 1

@@ -3,7 +3,7 @@ from collections import Counter
 from transformers import AutoTokenizer, BertForMaskedLM, RobertaForMaskedLM, \
     ElectraForMaskedLM
 import torch
-from preprocessing import build_df_from_data, format_dataframe
+from preprocessing import format_dataframe
 from evaluate import load
 from math import ceil
 
@@ -143,7 +143,7 @@ def zero_shot(model_name, model_for_lm, mask_format, train_data):
 
 def main():
     # Uncomment if there are not csv files saved
-    # df_train, df_test = build_df_from_data()
+    # df_train, df_test = build_df_data()
 
     buffer = ""
     for model_name, model_for_lm, mask_format in MODELS:
