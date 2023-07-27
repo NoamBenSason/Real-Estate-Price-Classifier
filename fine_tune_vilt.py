@@ -69,7 +69,7 @@ def collate_fn(batch):
 
 
 def train_vilt_model(model, processor, train_dataset, eval_dataset,
-                     save_strategy, config=None, use_wandb=False):
+                     save_strategy, config=None, use_wandb=False, seed=42):
     train_args = TrainingArguments(output_dir="./results",
                                    save_strategy=save_strategy,
                                    evaluation_strategy="epoch",
@@ -77,7 +77,8 @@ def train_vilt_model(model, processor, train_dataset, eval_dataset,
                                    logging_steps=50,
                                    report_to=["wandb"] if use_wandb else [
                                        'none'],
-                                   remove_unused_columns=False)
+                                   remove_unused_columns=False,
+                                   seed=seed)
 
     beta = config['beta'] if config is not None else 0.5
     if config is not None:
@@ -100,7 +101,7 @@ def train_vilt_model(model, processor, train_dataset, eval_dataset,
 
 
 def fine_tune_model(special_tokens, train_dataset, eval_dataset,
-                    save_strategy, wandb_config=None, use_wandb=False):
+                    save_strategy, wandb_config=None, use_wandb=False, seed = 42):
     config = AutoConfig.from_pretrained("dandelin/vilt-b32-mlm", num_labels=1,
                                         num_images=1,
                                         max_position_embeddings=256)
@@ -123,7 +124,7 @@ def fine_tune_model(special_tokens, train_dataset, eval_dataset,
 
     trainer, eval_results = train_vilt_model(
         model, processor, train_dataset, eval_dataset,
-        save_strategy, wandb_config, use_wandb
+        save_strategy, wandb_config, use_wandb, seed=seed
     )
     outputs = trainer.predict(eval_dataset), eval_results
     return outputs, trainer
