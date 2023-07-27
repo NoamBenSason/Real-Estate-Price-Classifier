@@ -30,21 +30,25 @@ df['bath'] =df['bath'].astype(int)
 sns.histplot(df["price"])
 plt.title("price histogram")
 plt.xlabel("Price (in million dollars)")
+plt.show()
 
 # %%
 sns.histplot(df["sqft"])
 plt.title("Histogram of the area of the properties")
 plt.xlabel("Area (in square feet)")
+plt.show()
 
 # %%
 sns.countplot(data=df, x="bed")
 plt.title("Histogram of bedrooms count")
 plt.xlabel("No. of bedrooms in the property")
+plt.show()
 
 # %%
 sns.countplot(data=df, x="bath")
 plt.title("Histogram of bathrooms count")
 plt.xlabel("No. of bathrooms in the property")
+plt.show()
 
 # %%
 bed_bath_groups = df[["bed","bath","price"]].groupby(['bed','bath']).mean()
@@ -61,5 +65,6 @@ _ = plt.yticks(range(int(df['bath'].min()), int(df['bath'].max()) + 1))
 _ = plt.title("avg price of (bedrooms ,bathrooms) combinations")
 plt.xlabel("No. of bedrooms")
 plt.ylabel("No. of bathrooms")
+plt.show()
 
 # %%

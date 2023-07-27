@@ -1,7 +1,9 @@
+accelerate>=0.20.1
 datasets
 evaluate
 matplotlib
 nlpaug
+nltk
 numpy
 pandas
 pillow
