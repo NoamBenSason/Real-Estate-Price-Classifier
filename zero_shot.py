@@ -1,18 +1,16 @@
-from collections import Counter
-
-from transformers import AutoTokenizer, BertForMaskedLM, RobertaForMaskedLM, \
-    ElectraForMaskedLM
 import torch
-from preprocessing import format_dataframe
+
+from collections import Counter
 from evaluate import load
-from math import ceil
+from transformers import AutoTokenizer, BertForMaskedLM, RobertaForMaskedLM, ElectraForMaskedLM
+
+from preprocessing import format_dataframe
 
 SLICE_DATA_FOR_DEBUG = 3
 X_INDX_IN_TUPLE = 0
 Y_INDX_IN_TUPLE = 1
 N_EXAMPLE_SAMPLES = 3
 BATCH_SIZE = 16
-# FORMAT_STR = "The price of this house is {mask_format}.{mask_format}$ million."
 FORMAT_STR = "The price of this house is ({mask_format}.{mask_format})$ million."
 
 MODELS = [
@@ -83,7 +81,7 @@ def save_results(buffer, filename):
         f.write(buffer)
 
 
-def evaluate(predictions, labels):
+def evaluate_zero_shot(predictions, labels):
     r2_metric = load("r_squared")
     mse_metric = load("mse")
     mae_metric = load("mae")
@@ -125,13 +123,11 @@ def zero_shot(model_name, model_for_lm, mask_format, train_data):
         as_tuple=True)
     numerical_ids = get_numerical_tokens(tokenizer)
 
-    # maximazing only the numerical token to only them will get picked
+    # maximizing only the numerical token to only them will get picked
     for indx in numerical_ids:
         logits[mask_token_indexs[0], mask_token_indexs[1], indx] = logits[
-                                                                       mask_token_indexs[
-                                                                           0],
-                                                                       mask_token_indexs[
-                                                                           1], indx] + max_val
+                                                                       mask_token_indexs[0],
+                                                                       mask_token_indexs[1], indx] + max_val
 
     predicted_token_id = logits[
         mask_token_indexs[0], mask_token_indexs[1]].argmax(axis=-1)
@@ -142,15 +138,12 @@ def zero_shot(model_name, model_for_lm, mask_format, train_data):
 
 
 def main():
-    # Uncomment if there are not csv files saved
-    # df_train, df_test = build_df_data()
-
     buffer = ""
     for model_name, model_for_lm, mask_format in MODELS:
         y = []
         y_hat = []
         val_data = format_dataframe("validation_data.csv",
-                                    "{overview}")  # TODO maybe val data
+                                    "{overview}")
         examples = []
         for i in range(0, len(val_data), BATCH_SIZE):
             truncated_formatted_sentences, true_data_completion, predicted_prices = zero_shot(
@@ -162,11 +155,12 @@ def main():
                 examples = [truncated_formatted_sentences[:N_EXAMPLE_SAMPLES],
                             predicted_prices[:N_EXAMPLE_SAMPLES],
                             true_data_completion[:N_EXAMPLE_SAMPLES]]
-        losses = evaluate(y_hat, y)
+        losses = evaluate_zero_shot(y_hat, y)
         counter = Counter(map(lambda x: str(x), y_hat))
         buffer = save_to_buffer(model_name, losses, examples, counter, buffer)
     save_results(buffer, "zero_shot_results")
     # Hello everyone
+
 
 if __name__ == '__main__':
     main()

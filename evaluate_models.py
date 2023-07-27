@@ -2,7 +2,6 @@ import argparse
 import json
 import numpy as np
 import pandas as pd
-import torch
 
 from datasets import Dataset
 
@@ -10,8 +9,8 @@ from fine_tuning import fine_tune_model, tokenize_func, convert_data
 
 SPECIAL_TOKENS = ['[bd]', '[br]', '[address]', '[overview]', '[sqft]']
 MODELS = ['bert-base-uncased', 'roberta-base', 'google/electra-base-generator'
-          # 'bert-large-uncased', 'roberta-large',
-          # 'google/electra-large-generator'
+          'bert-large-uncased', 'roberta-large',
+          'google/electra-large-generator'
           ]
 
 ROBERTA_CONFIG = {
@@ -65,13 +64,15 @@ def get_model_avg_score_and_std(scores):
 def get_models_predictions(models, train_dataset, validation_dataset,
                            test_dataset_in_dist, test_dataset_out_dist, seed, augment=False,
                            del_p=0):
+    """
+    Gets the statistics on a prediction of a single model. The model is trained over multiple seeds and the
+    results are averaged
+    """
     prediction_results = {}
 
 
 
     for model_name in models:
-        # if torch.cuda.is_available():
-        #     torch._C._cuda_emptyCache()
         scores_in_dist = []
         scores_out_dist = []
         model_config = MODELS_CONFIG[model_name]
@@ -149,7 +150,6 @@ def main():
     args.add_argument("--out_name", default="results", type=str, help="name of output file")
 
     args = args.parse_args()
-    # print(args)
     if not args.augment:
         train_dataset = convert_data('train_data.csv')
     else:
@@ -160,14 +160,6 @@ def main():
     test_dataset_in_dist = convert_data('test_data_in_dist.csv')
     test_dataset_out_dist = convert_data('test_data_out_dist.csv')
 
-    # results = evaluate_models(
-    #     MODELS,
-    #     train_dataset.select([i for i in range(1)]),
-    #     validation_dataset.select([i for i in range(1)]),
-    #     test_dataset_in_dist.select([i for i in range(1)]),
-    #     test_dataset_out_dist.select([i for i in range(1)]),
-    #     args
-    # )
     results = evaluate_models(
         MODELS,
         train_dataset,

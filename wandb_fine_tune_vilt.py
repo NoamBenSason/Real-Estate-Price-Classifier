@@ -1,16 +1,16 @@
 import torch
 import argparse
 import wandb
+import pandas as pd
+
 from fine_tune_vilt import fine_tune_model, SPECIAL_TOKENS,get_multi_model_data
 from wandb_fine_tune import get_time
-import pandas as pd
 from datasets import Dataset
 
 
 def get_config(name, augment, del_p):
     sweep_config = {'method': 'random',
                     'name': name,
-                    # 'metric': {'name': 'eval/mse', 'goal': 'minimize'} # todo set metric?
                     }
 
     param_dict = {
@@ -46,7 +46,7 @@ def run_wandb_vilt(config=None):
 
         if config['augment']:
             train_dataset = pd.read_csv('train_data_with_aug.csv')
-            train_dataset = Dataset.from_pandas(train_dataset) # todo maybe change later format of images
+            train_dataset = Dataset.from_pandas(train_dataset)
         else:
             train_dataset = get_multi_model_data("train_data.csv", "images")
         validation_dataset = get_multi_model_data("validation_data.csv", "validation_images")

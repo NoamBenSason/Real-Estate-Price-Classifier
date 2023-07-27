@@ -1,8 +1,12 @@
 import evaluate
-from transformers import Trainer
 import torch
 
-MODELS = ['bert-base-uncased']  # TODO add other models
+from transformers import Trainer
+
+MODELS = ['bert-base-uncased', 'roberta-base', 'google/electra-base-generator'
+          'bert-large-uncased', 'roberta-large',
+          'google/electra-large-generator'
+          ]
 SPECIAL_TOKENS = ['[bd]', '[br]', '[address]', '[overview]', '[sqft]']
 FINE_TUNNING_FORMAT = "[bd] {bed} [br] {bath} [sqft] {sqft} [address] " \
                       "{street} {city} {state} [overview] {overview}"

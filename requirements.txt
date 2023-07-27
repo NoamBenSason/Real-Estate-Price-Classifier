@@ -1,0 +1,14 @@
+datasets
+evaluate
+matplotlib
+nlpaug
+numpy
+pandas
+pillow
+requests
+scikit-learn
+seaborn
+torch
+tqdm
+transformers
+wandb

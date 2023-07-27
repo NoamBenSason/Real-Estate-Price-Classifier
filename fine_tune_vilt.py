@@ -1,24 +1,10 @@
-from transformers import ViltProcessor, ViltForImagesAndTextClassification, \
-    AutoConfig
-from PIL import Image
 import datasets
-from transformers import TrainingArguments
-from preprocessing import format_dataframe
-from fine_tuning_utils import SmoothL1Trainer, FINE_TUNNING_FORMAT, \
-    get_metrics_func, SPECIAL_TOKENS
 import torch
-import argparse
+from PIL import Image
+from transformers import ViltProcessor, ViltForImagesAndTextClassification, AutoConfig, TrainingArguments
 
-
-# def transform(batch):
-#
-#
-# def process_func(row, processor, with_label=True):
-#     processed_inputs = processor(row["image"], row["text"], truncation=True)
-#     if with_label:
-#         processed_inputs["labels"] = row['labels']
-#
-#     return processed_inputs
+from fine_tuning_utils import SmoothL1Trainer, FINE_TUNNING_FORMAT, get_metrics_func, SPECIAL_TOKENS
+from preprocessing import format_dataframe
 
 
 def get_transform_func(processor, with_labels=True):
@@ -35,8 +21,6 @@ def get_transform_func(processor, with_labels=True):
 
 
 def get_multi_model_data(file_name, image_download_dir):
-    # Uncomment if there are not csv files saved
-    # df_train, df_test = build_df_data()
 
     tuples = format_dataframe(file_name, FINE_TUNNING_FORMAT, with_image=True,
                               image_download_dir=image_download_dir)
@@ -44,8 +28,6 @@ def get_multi_model_data(file_name, image_download_dir):
     texts = [item[0] for item in tuples]
     images = [item[1] for item in tuples]
     prices = [item[2] for item in tuples]
-
-    # images_pil = [datasets.Image(im[0]) for im in images]
 
     images_pil = [Image.open(im[0]) for im in images]  # Takes time
 
@@ -131,29 +113,13 @@ def fine_tune_model(special_tokens, train_dataset, eval_dataset,
 
 
 def main():
-    args = argparse.ArgumentParser()
-    args.add_argument("--augment", default=False, type=lambda x: x == "True",
-                      help="use "
-                           "augmented data")
-    args.add_argument("--del_p", default=0.1, type=float, help="probability to "
-                                                               "delete")
-    args.add_argument("--seed", default=3, type=int,
-                      help="seed for fine tuning")
-
-    args = args.parse_args()
-    # print(args)
-    # if not args.augment:
     train_dataset = get_multi_model_data("train_data.csv", "images")
-    # else:
-    #     train_dataset = pd.read_csv('train_data_with_aug.csv')
-    #     train_dataset = Dataset.from_pandas(train_dataset)
     validation_dataset = get_multi_model_data("validation_data.csv",
                                               "validation_images")
 
     predictions, trainer = fine_tune_model(SPECIAL_TOKENS, train_dataset,
                                            validation_dataset, "no")
 
-    # print(f"Eval results: {eval_results}")
     print(f"Predictions: {predictions}")
 
 

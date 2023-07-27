@@ -13,6 +13,11 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class DataAugmentation:
+    """
+    A class which manges the augmentation of our data. can perform back translation (translating a text to
+    a different language and then back to english) and random word removal (removes words at random from
+    the text)
+    """
     def __init__(self):
 
         self.remove_word_aug = naw.RandomWordAug()
@@ -44,7 +49,6 @@ class DataAugmentation:
             raise NotImplemented
 
         augmented_data = augmentor.augment(overview_text)
-        # augmentor.model.to(torch.device("cpu"))
         del augmentor
         return augmented_data
 

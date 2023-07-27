@@ -1,8 +1,8 @@
-from typing import Optional
-
-from transformers import PreTrainedModel
 import torch
+
+from typing import Optional
 from torch import nn
+from transformers import PreTrainedModel
 
 
 class VisionTextClassifier(PreTrainedModel):

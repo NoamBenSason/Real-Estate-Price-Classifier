@@ -1,11 +1,11 @@
-import pandas as pd
+import argparse
 import torch
-from datasets import Dataset
-
 import wandb
+import pandas as pd
+
+from datasets import Dataset
 from datetime import datetime
 from fine_tuning import fine_tune_model, SPECIAL_TOKENS, convert_data
-import argparse
 
 
 def get_time():
@@ -24,11 +24,11 @@ def get_config(name, augment, del_p):
     param_dict = {
         'model_name': {'values': [
             'bert-base-uncased',
-            # 'bert-large-uncased',
+            'bert-large-uncased',
             'roberta-base',
-            # 'roberta-large',
+            'roberta-large',
             'google/electra-base-generator',
-            # 'google/electra-large-generator'
+            'google/electra-large-generator'
         ]},
 
         'epoch': {'value': 15},
@@ -87,17 +87,6 @@ def main():
 
     print(sweep_id)
     wandb.agent(sweep_id, wandb_run, count=1000)
-    # config = {
-    #     'model_name': 'bert-base-uncased',
-    #     'epoch': 1,
-    #     'learning_rate': 0.0001,
-    #     'weight_decay': 0.0,
-    #     'beta': 0.0,
-    #     'augment': False,
-    #     'del_p': 0.1
-    # }
-    #
-    # wandb_run(config)
 
 
 if __name__ == '__main__':

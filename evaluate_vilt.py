@@ -1,10 +1,7 @@
 import argparse
 import json
 import numpy as np
-import pandas as pd
-import torch
 
-from datasets import Dataset
 from transformers import ViltProcessor, AutoConfig
 
 from fine_tune_vilt import get_multi_model_data, fine_tune_model, get_transform_func
@@ -40,12 +37,12 @@ def get_model_avg_score_and_std(scores):
 
 
 def get_models_predictions(train_dataset, validation_dataset,
-                           test_dataset_in_dist, test_dataset_out_dist, seed, augment=False,
-                           del_p=0):
-    prediction_results = {}
+                           test_dataset_in_dist, test_dataset_out_dist, seed):
+    """
+    Gets the statistics on a prediction of the vilt model. The model is trained over multiple seeds and the
+    results are averaged
+    """
 
-    # if torch.cuda.is_available():
-    #     torch._C._cuda_emptyCache()
     scores_in_dist = []
     scores_out_dist = []
     model_config = CONFIG
@@ -55,41 +52,22 @@ def get_models_predictions(train_dataset, validation_dataset,
                                           "no", wandb_config=model_config,
                                           seed=i)
 
-        # pros_test_in_dist = test_dataset_in_dist.map(
-        #     lambda x: tokenize_func(x, trainer.tokenizer), batched=True)
-        # pros_test_in_dist = pros_test_in_dist.remove_columns(
-        #     ['description'])
-        #
-        # pros_test_out_dist = test_dataset_out_dist.map(
-        #     lambda x: tokenize_func(x, trainer.tokenizer), batched=True)
-        # pros_test_out_dist = pros_test_out_dist.remove_columns(
-        #     ['description'])
-        #
-        # scores_in_dist.append(trainer.evaluate(pros_test_in_dist,
-        #                                        metric_key_prefix='test'))
-        #
-        # scores_out_dist.append(trainer.evaluate(pros_test_out_dist,
-        #                                         metric_key_prefix='test'))
-
-        # del trainer
         scores_in_dist.append(trainer.evaluate(eval_dataset=test_dataset_in_dist, metric_key_prefix='test'))
         scores_out_dist.append(trainer.evaluate(eval_dataset=test_dataset_out_dist, metric_key_prefix='test'))
+        del trainer
 
-        prediction_results = {'in_dist': get_model_avg_score_and_std(scores_in_dist),
-                              'out_dist': get_model_avg_score_and_std(scores_out_dist)}
+    prediction_results = {'in_dist': get_model_avg_score_and_std(scores_in_dist),
+                          'out_dist': get_model_avg_score_and_std(scores_out_dist)}
 
     return prediction_results
 
 
 def evaluate_models(train_dataset, validation_dataset, test_dataset_in_dist, test_dataset_out_dist,
                     args):
-    results = {}
-
-    # Run without augmentation
-    results['Without Augmentation'] = get_models_predictions(train_dataset, validation_dataset,
-                                                             test_dataset_in_dist, test_dataset_out_dist,
-                                                             args.seed
-                                                             )
+    results = {'Without Augmentation': get_models_predictions(train_dataset, validation_dataset,
+                                                              test_dataset_in_dist, test_dataset_out_dist,
+                                                              args.seed
+                                                              )}
 
     return results
 
@@ -106,20 +84,15 @@ def main():
     args.add_argument("--out_name", default="results", type=str, help="name of output file")
 
     args = args.parse_args()
-    # print(args)
-    # if not args.augment:
     train_dataset = get_multi_model_data("train_data.csv", "images")
-    # else:
-    #     train_dataset = pd.read_csv('train_data_with_aug.csv')
-    #     train_dataset = Dataset.from_pandas(train_dataset)
     validation_dataset = get_multi_model_data("validation_data.csv",
                                               "validation_images")
 
     test_dataset_in_dist = get_multi_model_data("test_data_in_dist.csv", "test_in_dist_images")
     test_dataset_out_dist = get_multi_model_data("test_data_out_dist.csv", "test_out_dist_images")
     vilt_config = AutoConfig.from_pretrained("dandelin/vilt-b32-mlm", num_labels=1,
-                                        num_images=1,
-                                        max_position_embeddings=256)
+                                             num_images=1,
+                                             max_position_embeddings=256)
     processor = ViltProcessor.from_pretrained("dandelin/vilt-b32-mlm",
                                               num_labels=1, config=vilt_config,
                                               num_images=1, do_resize=True,
@@ -129,14 +102,6 @@ def main():
     test_dataset_in_dist.set_transform(get_transform_func(processor))
     test_dataset_out_dist.set_transform(get_transform_func(processor))
 
-    # results = evaluate_models(
-    #     MODELS,
-    #     train_dataset.select([i for i in range(1)]),
-    #     validation_dataset.select([i for i in range(1)]),
-    #     test_dataset_in_dist.select([i for i in range(1)]),
-    #     test_dataset_out_dist.select([i for i in range(1)]),
-    #     args
-    # )
     results = evaluate_models(
         train_dataset,
         validation_dataset,
