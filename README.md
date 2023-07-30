@@ -1,2 +1,2 @@
-# Selling Bat Yam
-aiming to conquer the real estate market
+# ANLP Project - Real Estate Price Prediction Using Large Language models
+
