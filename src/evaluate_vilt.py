@@ -84,12 +84,12 @@ def main():
     args.add_argument("--out_name", default="results", type=str, help="name of output file")
 
     args = args.parse_args()
-    train_dataset = get_multi_model_data("train_data.csv", "images")
-    validation_dataset = get_multi_model_data("validation_data.csv",
+    train_dataset = get_multi_model_data("../csvs/train_data.csv", "images")
+    validation_dataset = get_multi_model_data("../csvs/validation_data.csv",
                                               "validation_images")
 
-    test_dataset_in_dist = get_multi_model_data("test_data_in_dist.csv", "test_in_dist_images")
-    test_dataset_out_dist = get_multi_model_data("test_data_out_dist.csv", "test_out_dist_images")
+    test_dataset_in_dist = get_multi_model_data("../csvs/test_data_in_dist.csv", "test_in_dist_images")
+    test_dataset_out_dist = get_multi_model_data("../csvs/test_data_out_dist.csv", "test_out_dist_images")
     vilt_config = AutoConfig.from_pretrained("dandelin/vilt-b32-mlm", num_labels=1,
                                              num_images=1,
                                              max_position_embeddings=256)

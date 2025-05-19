@@ -3,7 +3,7 @@ import wandb
 from transformers import BertForMaskedLM, RobertaForMaskedLM, ElectraForMaskedLM
 
 from zero_shot import zero_shot, evaluate_zero_shot, BATCH_SIZE
-from preprocessing import format_dataframe
+from src.preprocessing import format_dataframe
 
 MODELS_DICT = {
     # model name: model object, mask format
@@ -32,7 +32,7 @@ def wandb_zero_shot(config=None):
         config = wandb.config
         model_name = config["model_name"]
         model_for_lm, mask_format = MODELS_DICT[model_name]
-        val_data = format_dataframe("validation_data.csv", "{overview}")
+        val_data = format_dataframe("../csvs/validation_data.csv", "{overview}")
         y_hat = []
         y = []
         for i in range(0, len(val_data), BATCH_SIZE):

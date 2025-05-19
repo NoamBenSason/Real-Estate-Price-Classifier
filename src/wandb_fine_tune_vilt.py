@@ -3,7 +3,7 @@ import argparse
 import wandb
 import pandas as pd
 
-from fine_tune_vilt import fine_tune_model, SPECIAL_TOKENS,get_multi_model_data
+from src.fine_tune_vilt import fine_tune_model, SPECIAL_TOKENS,get_multi_model_data
 from wandb_fine_tune import get_time
 from datasets import Dataset
 
@@ -45,11 +45,11 @@ def run_wandb_vilt(config=None):
         config = wandb.config
 
         if config['augment']:
-            train_dataset = pd.read_csv('train_data_with_aug.csv')
+            train_dataset = pd.read_csv('../csvs/train_data_with_aug.csv')
             train_dataset = Dataset.from_pandas(train_dataset)
         else:
-            train_dataset = get_multi_model_data("train_data.csv", "images")
-        validation_dataset = get_multi_model_data("validation_data.csv", "validation_images")
+            train_dataset = get_multi_model_data("../csvs/train_data.csv", "images")
+        validation_dataset = get_multi_model_data("../csvs/validation_data.csv", "validation_images")
         if torch.cuda.is_available():
             torch._C._cuda_emptyCache()
 

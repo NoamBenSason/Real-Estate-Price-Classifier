@@ -31,7 +31,7 @@ def train_model(model, tokenizer, train_dataset, validation_dataset,
     :param use_wandb: whether to use wandb
     :return:
     """
-    train_args = TrainingArguments(output_dir="./results",
+    train_args = TrainingArguments(output_dir="../results",
                                    save_strategy=save_strategy,
                                    evaluation_strategy="epoch",
                                    logging_strategy="steps",
@@ -148,7 +148,7 @@ def main():
     if not args.augment:
         train_dataset = convert_data('train_data.csv')
     else:
-        train_dataset = pd.read_csv('train_data_with_aug.csv')
+        train_dataset = pd.read_csv('../csvs/train_data_with_aug.csv')
         train_dataset = Dataset.from_pandas(train_dataset)
     validation_dataset = convert_data('validation_data.csv')
 

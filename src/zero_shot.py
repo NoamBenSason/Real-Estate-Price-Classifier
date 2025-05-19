@@ -4,7 +4,7 @@ from collections import Counter
 from evaluate import load
 from transformers import AutoTokenizer, BertForMaskedLM, RobertaForMaskedLM, ElectraForMaskedLM
 
-from preprocessing import format_dataframe
+from src.preprocessing import format_dataframe
 
 SLICE_DATA_FOR_DEBUG = 3
 X_INDX_IN_TUPLE = 0
@@ -142,7 +142,7 @@ def main():
     for model_name, model_for_lm, mask_format in MODELS:
         y = []
         y_hat = []
-        val_data = format_dataframe("validation_data.csv",
+        val_data = format_dataframe("../csvs/validation_data.csv",
                                     "{overview}")
         examples = []
         for i in range(0, len(val_data), BATCH_SIZE):

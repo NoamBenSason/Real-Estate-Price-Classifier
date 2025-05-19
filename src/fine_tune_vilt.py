@@ -52,7 +52,7 @@ def collate_fn(batch):
 
 def train_vilt_model(model, processor, train_dataset, eval_dataset,
                      save_strategy, config=None, use_wandb=False, seed=42):
-    train_args = TrainingArguments(output_dir="./results",
+    train_args = TrainingArguments(output_dir="../results",
                                    save_strategy=save_strategy,
                                    evaluation_strategy="epoch",
                                    logging_strategy="steps",
@@ -113,8 +113,8 @@ def fine_tune_model(special_tokens, train_dataset, eval_dataset,
 
 
 def main():
-    train_dataset = get_multi_model_data("train_data.csv", "images")
-    validation_dataset = get_multi_model_data("validation_data.csv",
+    train_dataset = get_multi_model_data("../csvs/train_data.csv", "images")
+    validation_dataset = get_multi_model_data("../csvs/validation_data.csv",
                                               "validation_images")
 
     predictions, trainer = fine_tune_model(SPECIAL_TOKENS, train_dataset,

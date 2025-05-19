@@ -19,7 +19,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # %%
-df = pd.read_csv("west_coast_data.csv")
+df = pd.read_csv("../csvs/west_coast_data.csv")
 
 # %%
 df = df.dropna()

@@ -5,7 +5,7 @@ import pandas as pd
 
 from datasets import Dataset
 
-from fine_tuning import fine_tune_model, tokenize_func, convert_data
+from src.fine_tuning import fine_tune_model, tokenize_func, convert_data
 
 SPECIAL_TOKENS = ['[bd]', '[br]', '[address]', '[overview]', '[sqft]']
 MODELS = ['bert-base-uncased', 'roberta-base', 'google/electra-base-generator'
@@ -153,7 +153,7 @@ def main():
     if not args.augment:
         train_dataset = convert_data('train_data.csv')
     else:
-        train_dataset = pd.read_csv('train_data_with_aug.csv')
+        train_dataset = pd.read_csv('../csvs/train_data_with_aug.csv')
         train_dataset = Dataset.from_pandas(train_dataset)
 
     validation_dataset = convert_data('validation_data.csv')

@@ -5,7 +5,7 @@ import pandas as pd
 
 from datasets import Dataset
 from datetime import datetime
-from fine_tuning import fine_tune_model, SPECIAL_TOKENS, convert_data
+from src.fine_tuning import fine_tune_model, SPECIAL_TOKENS, convert_data
 
 
 def get_time():
@@ -60,7 +60,7 @@ def wandb_run(config=None):
                     group="fine_tune_aug"):
         config = wandb.config
         if config['augment']:
-            train = pd.read_csv('train_data_with_aug.csv')
+            train = pd.read_csv('../csvs/train_data_with_aug.csv')
             train = Dataset.from_pandas(train)
         else:
             train = convert_data("train_data.csv")
