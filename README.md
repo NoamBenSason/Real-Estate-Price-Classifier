@@ -1,4 +1,4 @@
-# ANLP Project - Real Estate Price Prediction Using Large Language models
+# Real Estate Price Prediction Using Large Language models
 This project aims to predict property prices using the properties' textual overview for enhanced accuracy
 
 **In order to run our files, please create a new pip/conda envinronment with python 3.9 and install the required packages using `pip install -r requirements.txt`**
